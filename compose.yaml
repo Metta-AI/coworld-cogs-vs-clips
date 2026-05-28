@@ -1,0 +1,25 @@
+services:
+  game:
+    image: coworld-cogs-vs-clips-game:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.game
+      args:
+        METTASCOPE_BUILDER_PLATFORM: linux/amd64
+        GAME_RUNTIME_PLATFORM: linux/amd64
+  player:
+    image: coworld-cogs-vs-clips-reference-player:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile.player
+      args:
+        PLAYER_RUNTIME_PLATFORM: linux/amd64
+  # Cogs vs Clips has no game-specific reporter yet; reference the GHCR default reporter to satisfy reporter[] min_length=1.
+  reporter:
+    image: ghcr.io/metta-ai/reporters-default:latest
+    platform: linux/amd64
+  grader:
+    image: ghcr.io/metta-ai/graders-cogs-v-clips:latest
+    platform: linux/amd64

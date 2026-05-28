@@ -13,14 +13,24 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "mettagrid>=0.26.11",
+  "coworld @ git+https://github.com/Metta-AI/coworld.git@main",
+  "fastapi==0.115.5",
+  "mettagrid @ git+https://github.com/Metta-AI/mettagrid.git@main",
+  "numpy",
   "pydantic>=2.11.5",
   "typing-extensions>=4.12.0",
+  "uvicorn[standard]==0.34.2",
+  "websockets",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
-test = ["mettagrid[train]>=0.26.11", "pytest", "pytest-xdist"]
+test = [
+  "httpx",
+  "mettagrid[train] @ git+https://github.com/Metta-AI/mettagrid.git@main",
+  "pytest",
+  "pytest-xdist",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
