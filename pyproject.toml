@@ -55,6 +55,3 @@ fallback_version = "0.0.0"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-
-[tool.uv.sources]
-coworld = { git = "https://github.com/Metta-AI/coworld.git", branch = "main" }
