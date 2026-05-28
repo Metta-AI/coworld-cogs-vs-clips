@@ -13,7 +13,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-  "coworld @ git+https://github.com/Metta-AI/coworld.git@main",
+  "coworld",
   "fastapi==0.115.5",
   "mettagrid>=0.26.21",
   "numpy",
@@ -55,3 +55,6 @@ fallback_version = "0.0.0"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+coworld = { git = "https://github.com/Metta-AI/coworld.git", branch = "main" }
