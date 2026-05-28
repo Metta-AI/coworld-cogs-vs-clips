@@ -1,8 +1,11 @@
-# cogsguard
+# coworld-cogs-vs-clips
 
-CogsGuard game runtime for Coworld.
+Cogs vs Clips Coworld source package.
 
 Cogs vs Clips is a team-based territory control game. Cog agents capture and hold junctions while Clips — automated opponents — continuously expand by seizing adjacent territory.
+
+This repo owns the `cogs_vs_clips` Coworld game runtime, reference player, manifest template, and Docker build inputs.
+The Python package remains `cogsguard`.
 
 ## Install
 
@@ -24,4 +27,11 @@ game = get_game("cogsguard")
 ```bash
 pip install -e '.[test]'
 pytest
+```
+
+## Coworld Build
+
+```bash
+coworld build compose.yaml coworld_manifest_template.json 0.2.18 tmp/coworld_manifest.json
+coworld certify tmp/coworld_manifest.json
 ```
