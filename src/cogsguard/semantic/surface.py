@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from cogsguard.semantic.events import CogsguardEventExtractor
+from cogsguard.semantic.guidance import render_cogsguard_skill_library
 from cogsguard.semantic.state import CogsguardStateAdapter
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.sdk.agent import (
@@ -56,6 +57,9 @@ class CogsguardSemanticSurface:
         current_state: MettagridState,
     ) -> list[SemanticEvent]:
         return self.event_extractor.extract_events(previous_state, current_state)
+
+    def render_skill_library(self) -> str:
+        return render_cogsguard_skill_library()
 
     def with_shared_objectives(
         self,

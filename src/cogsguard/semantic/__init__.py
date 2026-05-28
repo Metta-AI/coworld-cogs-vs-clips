@@ -10,6 +10,7 @@ from cogsguard.semantic.constants import (
     COGSGUARD_ROLE_NAMES,
 )
 from cogsguard.semantic.events import CogsguardEventExtractor
+from cogsguard.semantic.guidance import render_cogsguard_skill_library
 from cogsguard.semantic.state import CogsguardStateAdapter
 from cogsguard.semantic.surface import CogsguardSemanticSurface
 

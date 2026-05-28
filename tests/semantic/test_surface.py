@@ -1,4 +1,4 @@
-from cogsguard.semantic import CogsguardEventExtractor, CogsguardSemanticSurface
+from cogsguard.semantic import CogsguardEventExtractor, CogsguardSemanticSurface, render_cogsguard_skill_library
 from mettagrid.sdk.agent import GridPosition, MettagridState, SelfState, SemanticEntity, TeamSummary
 
 
@@ -28,6 +28,13 @@ def test_semantic_surface_exports_game_adapter() -> None:
     surface = CogsguardSemanticSurface()
 
     assert isinstance(surface.event_extractor, CogsguardEventExtractor)
+
+
+def test_semantic_surface_renders_game_skill_library() -> None:
+    surface = CogsguardSemanticSurface()
+
+    assert surface.render_skill_library() == render_cogsguard_skill_library()
+    assert "target_entity_id" in surface.render_skill_library()
 
 
 def test_event_extractor_marks_heart_acquisition() -> None:
