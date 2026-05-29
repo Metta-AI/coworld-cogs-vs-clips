@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import importlib
+import importlib.util
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -243,8 +245,20 @@ class CogsguardMission(Config, ABC):
     def variant_module_prefixes(cls) -> tuple[str, ...]:
         return ("cogsguard.",)
 
+    @classmethod
+    def _ensure_variant_modules_loaded(cls) -> None:
+        for prefix in cls.variant_module_prefixes():
+            module_name = prefix.rstrip(".") + ".variants" if not prefix.endswith("variants.") else prefix.rstrip(".")
+            try:
+                importlib.import_module(module_name)
+            except ModuleNotFoundError as exc:
+                if exc.name == module_name:
+                    continue
+                raise
+
     def with_variants(self, variants: Sequence[str | CogsguardMissionVariant]) -> Self:
         copy = self.model_copy(deep=True)
+        copy._ensure_variant_modules_loaded()
         preferred_modules = copy.variant_module_prefixes()
         for variant in variants:
             if isinstance(variant, CogsguardMissionVariant):
@@ -297,6 +311,10 @@ _GAMES: dict[str, CogsguardGame] = {}
 
 def register_game(game: CogsguardGame) -> None:
     _GAMES[game.name] = game
+    if importlib.util.find_spec("mettagrid.cogame") is not None:
+        from mettagrid.cogame.game import register_game as register_cogame  # noqa: PLC0415
+
+        register_cogame(game)  # pyright: ignore[reportArgumentType]
 
 
 def get_game(name: str) -> CogsguardGame:
