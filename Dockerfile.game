@@ -47,9 +47,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN pip install --no-cache-dir \
     "coworld @ git+https://github.com/Metta-AI/coworld.git@main" \
-    fastapi==0.115.5 \
+    "fastapi>=0.115.5" \
     "mettagrid>=0.26.21" \
-    uvicorn[standard]==0.34.2
+    "uvicorn[standard]>=0.34.2"
 
 COPY pyproject.toml README.md /tmp/cogsguard/
 COPY src /tmp/cogsguard/src

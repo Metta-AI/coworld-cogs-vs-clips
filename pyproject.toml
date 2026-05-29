@@ -22,20 +22,20 @@ dynamic = ["version"]
 [project.optional-dependencies]
 coworld = [
   "coworld",
-  "fastapi==0.115.5",
+  "fastapi>=0.115.5",
   "numpy",
-  "uvicorn[standard]==0.34.2",
+  "uvicorn[standard]>=0.34.2",
   "websockets",
 ]
 test = [
   "coworld",
-  "fastapi==0.115.5",
+  "fastapi>=0.115.5",
   "httpx",
   "mettagrid[train]>=0.26.21",
   "numpy",
   "pytest",
   "pytest-xdist",
-  "uvicorn[standard]==0.34.2",
+  "uvicorn[standard]>=0.34.2",
   "websockets",
 ]
 
