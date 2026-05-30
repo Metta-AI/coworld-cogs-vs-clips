@@ -137,8 +137,15 @@
       "id": "softmax-default-reporter",
       "type": "reporter",
       "name": "Softmax Default Reporter",
-      "description": "Softmax-published default reporter: writes a one-paragraph Markdown summary derived from results.json scores. No event log. Cogs vs Clips has no game-specific reporter yet, so it references the default to satisfy the schema's min_length=1.",
+      "description": "Softmax-published default reporter: writes a one-paragraph Markdown summary derived from results.json scores.",
       "image": "{{REPORTER_IMAGE}}"
+    },
+    {
+      "id": "cogs-vs-clips-summarizer",
+      "type": "reporter",
+      "name": "Cogs vs Clips Summarizer",
+      "description": "Decodes Cogs vs Clips replay data into a Markdown summary, event-log Parquet, behavior_summary.json, and trace.jsonl.",
+      "image": "{{COGS_VS_CLIPS_REPORTER_IMAGE}}"
     }
   ],
   "grader": [
