@@ -16,9 +16,11 @@ services:
       dockerfile: Dockerfile.player
       args:
         PLAYER_RUNTIME_PLATFORM: linux/amd64
-  # Cogs vs Clips has no game-specific reporter yet; reference the GHCR default reporter to satisfy reporter[] min_length=1.
   reporter:
     image: ghcr.io/metta-ai/reporters-default:latest
+    platform: linux/amd64
+  cogs-vs-clips-reporter:
+    image: ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest
     platform: linux/amd64
   grader:
     image: ghcr.io/metta-ai/graders-cogs-v-clips:latest
