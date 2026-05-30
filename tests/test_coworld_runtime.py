@@ -17,7 +17,7 @@ def test_cogs_vs_clips_snapshot_exposes_admin_slot_state(tmp_path: Path) -> None
 
     assert snapshot["protocol"] == "coworld.player.v1"
     assert snapshot["global_protocol"] == "mettagrid.mettascope.live.v1"
-    assert snapshot["policy_names"] == []
+    assert snapshot["policy_names"] == ["Player 1", "Player 2"]
     assert snapshot["tick_mode"] == "fixed"
     assert snapshot["human_action_timeout_seconds"] == 5.0
     assert game.episode.wait_for_all_players is True
@@ -38,6 +38,7 @@ def test_cogs_vs_clips_admin_snapshot_exposes_takeover_player_links(
         {
             "mission": "machina_1",
             "tokens": ["token 0", "token/1"],
+            "players": _players("Player 1", "Player 2"),
             "max_steps": 3,
             "seed": 0,
             "step_seconds": 0.02,
@@ -116,6 +117,7 @@ def test_cogs_vs_clips_rollout_routes_preserve_coworld_runtime_contract(
             {
                 "mission": "machina_1",
                 "tokens": ["token-0", "token-1"],
+                "players": _players("Player 1", "Player 2"),
                 "max_steps": 1,
                 "seed": 0,
                 "step_seconds": 0.001,
@@ -203,13 +205,8 @@ def test_cogs_vs_clips_global_action_updates_policy_action(tmp_path: Path) -> No
     )
 
 
-def test_cogs_vs_clips_global_messages_include_policy_names(
-    tmp_path: Path, monkeypatch
-) -> None:
-    monkeypatch.setenv(
-        "COWORLD_POLICY_NAMES", json.dumps(["slanky:v194", "slinky:v19"])
-    )
-    game = _new_game(tmp_path)
+def test_cogs_vs_clips_global_messages_include_policy_names(tmp_path: Path) -> None:
+    game = _new_game(tmp_path, "slanky:v194", "slinky:v19")
 
     message = game.global_baseline_message()
 
@@ -221,17 +218,15 @@ def test_cogs_vs_clips_global_messages_include_policy_names(
 
 
 def test_cogs_vs_clips_records_compact_mettascope_replay(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv(
-        "COWORLD_POLICY_NAMES", json.dumps(["slanky:v194", "slinky:v19"])
-    )
     server_module = _load_cogs_vs_clips_server_module()
     replay_path = tmp_path / "replay.json"
     game = server_module.CogsVsClipsGame(
         {
             "mission": "machina_1",
             "tokens": ["token-0", "token-1"],
+            "players": _players("slanky:v194", "slinky:v19"),
             "max_steps": 3,
             "seed": 0,
             "step_seconds": 0.02,
@@ -281,6 +276,7 @@ def test_cogs_vs_clips_uploads_http_result_and_replay_uris(
         {
             "mission": "machina_1",
             "tokens": ["token-0", "token-1"],
+            "players": _players("Player 1", "Player 2"),
             "max_steps": 3,
             "seed": 0,
             "step_seconds": 0.02,
@@ -322,6 +318,7 @@ def test_cogs_vs_clips_assign_payload_stays_under_proxy_frame_cap(
         {
             "mission": "machina_1",
             "tokens": [f"token-{i}" for i in range(8)],
+            "players": _players(*[f"Player {i + 1}" for i in range(8)]),
             "max_steps": 100,
             "seed": 0,
             "step_seconds": 0.05,
@@ -393,12 +390,14 @@ def test_cogs_vs_clips_replay_client_redirects_to_mettascope(tmp_path: Path) -> 
     assert control_message == {"type": "control", "command": {"command": "pause"}}
 
 
-def _new_game(tmp_path: Path):
+def _new_game(tmp_path: Path, *display_names: str):
     server_module = _load_cogs_vs_clips_server_module()
+    names = display_names or ("Player 1", "Player 2")
     return server_module.CogsVsClipsGame(
         {
             "mission": "machina_1",
             "tokens": ["token-0", "token-1"],
+            "players": _players(*names),
             "max_steps": 3,
             "seed": 0,
             "step_seconds": 0.02,
@@ -407,6 +406,10 @@ def _new_game(tmp_path: Path):
         replay_path=None,
         request_shutdown=lambda: None,
     )
+
+
+def _players(*names: str) -> list[dict[str, str]]:
+    return [{"name": name} for name in names]
 
 
 def _agent_policy_names(objects: list[dict]) -> dict[int, str]:

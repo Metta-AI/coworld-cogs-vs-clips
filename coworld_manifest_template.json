@@ -14,7 +14,7 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "additionalProperties": false,
-      "required": ["tokens", "mission", "max_steps", "seed", "step_seconds"],
+      "required": ["tokens", "players", "mission", "max_steps", "seed", "step_seconds"],
       "properties": {
         "tokens": {
           "type": "array",
@@ -23,6 +23,22 @@
           "items": {
             "type": "string",
             "minLength": 1
+          }
+        },
+        "players": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         },
         "mission": {
@@ -164,6 +180,16 @@
       "id": "machina-1-daily",
       "name": "Machina 1 Daily",
       "game_config": {
+        "players": [
+          { "name": "Player 1" },
+          { "name": "Player 2" },
+          { "name": "Player 3" },
+          { "name": "Player 4" },
+          { "name": "Player 5" },
+          { "name": "Player 6" },
+          { "name": "Player 7" },
+          { "name": "Player 8" }
+        ],
         "mission": "machina_1",
         "max_steps": 10000,
         "seed": 0,
@@ -174,6 +200,16 @@
   ],
   "certification": {
     "game_config": {
+      "players": [
+        { "name": "Player 1" },
+        { "name": "Player 2" },
+        { "name": "Player 3" },
+        { "name": "Player 4" },
+        { "name": "Player 5" },
+        { "name": "Player 6" },
+        { "name": "Player 7" },
+        { "name": "Player 8" }
+      ],
       "mission": "cogsguard",
       "max_steps": 3,
       "seed": 0,

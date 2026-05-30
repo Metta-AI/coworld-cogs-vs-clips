@@ -18,8 +18,6 @@ from coworld.runner.io import read_data, write_data
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import TypeAdapter
-
 from mettagrid.config.mettagrid_config import MettaGridConfig
 from mettagrid.map_builder.map_builder import HasSeed
 from mettagrid.renderer.common import METTASCOPE_REPLAY_URL_PREFIX
@@ -34,7 +32,6 @@ METTASCOPE_DIST_DIR = Path(
 GLOBAL_PROTOCOL = "mettagrid.mettascope.live.v1"
 START_GRACE_SECONDS = 0.5
 POLICY_ACTION_TIMEOUT_SECONDS = 0.1
-POLICY_NAMES_ADAPTER = TypeAdapter(list[str])
 GAME_HOST = os.environ.get("COGAME_HOST", "0.0.0.0")
 GAME_PORT = int(os.environ.get("COGAME_PORT", "8080"))
 
@@ -134,7 +131,7 @@ class CogsVsClipsGame:
     ):
         self.mission_name = config["mission"]
         self.tokens = config["tokens"]
-        self.policy_names = load_policy_names(len(self.tokens))
+        self.policy_names = load_player_display_names(config, len(self.tokens))
         max_steps = config["max_steps"]
         seed = config["seed"]
 
@@ -329,14 +326,11 @@ class CogsVsClipsGame:
         return infos_by_agent
 
 
-def load_policy_names(player_count: int) -> list[str]:
-    raw_names = os.environ.get("COWORLD_POLICY_NAMES")
-    if raw_names is None:
-        return []
-    policy_names = POLICY_NAMES_ADAPTER.validate_json(raw_names)
-    if len(policy_names) != player_count:
-        raise ValueError(f"COWORLD_POLICY_NAMES must contain {player_count} names")
-    return policy_names
+def load_player_display_names(config: dict[str, Any], player_count: int) -> list[str]:
+    display_names = [player["name"] for player in config["players"]]
+    if len(display_names) != player_count:
+        raise ValueError(f"config.players must contain {player_count} players")
+    return display_names
 
 
 def make_env(
