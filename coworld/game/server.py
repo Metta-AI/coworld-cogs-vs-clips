@@ -131,7 +131,9 @@ class CogsVsClipsGame:
     ):
         self.mission_name = config["mission"]
         self.tokens = config["tokens"]
-        self.policy_names = load_player_display_names(config, len(self.tokens))
+        self.policy_names = [player["name"] for player in config["players"]]
+        if len(self.policy_names) != len(self.tokens):
+            raise ValueError(f"config.players must contain {len(self.tokens)} players")
         max_steps = config["max_steps"]
         seed = config["seed"]
 
@@ -324,13 +326,6 @@ class CogsVsClipsGame:
             if policy_infos:
                 infos_by_agent[slot] = policy_infos
         return infos_by_agent
-
-
-def load_player_display_names(config: dict[str, Any], player_count: int) -> list[str]:
-    display_names = [player["name"] for player in config["players"]]
-    if len(display_names) != player_count:
-        raise ValueError(f"config.players must contain {player_count} players")
-    return display_names
 
 
 def make_env(
