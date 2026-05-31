@@ -18,8 +18,6 @@ from coworld.runner.io import read_data, write_data
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import TypeAdapter
-
 from mettagrid.config.mettagrid_config import MettaGridConfig
 from mettagrid.map_builder.map_builder import HasSeed
 from mettagrid.renderer.common import METTASCOPE_REPLAY_URL_PREFIX
@@ -34,7 +32,6 @@ METTASCOPE_DIST_DIR = Path(
 GLOBAL_PROTOCOL = "mettagrid.mettascope.live.v1"
 START_GRACE_SECONDS = 0.5
 POLICY_ACTION_TIMEOUT_SECONDS = 0.1
-POLICY_NAMES_ADAPTER = TypeAdapter(list[str])
 GAME_HOST = os.environ.get("COGAME_HOST", "0.0.0.0")
 GAME_PORT = int(os.environ.get("COGAME_PORT", "8080"))
 
@@ -134,7 +131,9 @@ class CogsVsClipsGame:
     ):
         self.mission_name = config["mission"]
         self.tokens = config["tokens"]
-        self.policy_names = load_policy_names(len(self.tokens))
+        self.policy_names = [player["name"] for player in config["players"]]
+        if len(self.policy_names) != len(self.tokens):
+            raise ValueError(f"config.players must contain {len(self.tokens)} players")
         max_steps = config["max_steps"]
         seed = config["seed"]
 
@@ -329,16 +328,6 @@ class CogsVsClipsGame:
         return infos_by_agent
 
 
-def load_policy_names(player_count: int) -> list[str]:
-    raw_names = os.environ.get("COWORLD_POLICY_NAMES")
-    if raw_names is None:
-        return []
-    policy_names = POLICY_NAMES_ADAPTER.validate_json(raw_names)
-    if len(policy_names) != player_count:
-        raise ValueError(f"COWORLD_POLICY_NAMES must contain {player_count} names")
-    return policy_names
-
-
 def make_env(
     mission_name: str, *, num_agents: int, max_steps: int, seed: int
 ) -> MettaGridConfig:
@@ -378,6 +367,15 @@ def _artifact_path(uri: str, filename: str) -> Path:
     raise ValueError(f"Unsupported cogs_vs_clips artifact URI: {uri}")
 
 
+def _mount_mettascope(app: FastAPI) -> bool:
+    if not METTASCOPE_DIST_DIR.is_dir():
+        return False
+    app.mount(
+        "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
+    )
+    return True
+
+
 def create_app(
     config: dict[str, Any],
     results_path: Path,
@@ -395,10 +393,7 @@ def create_app(
         replay_uri=replay_uri,
     )
     app = FastAPI()
-    if METTASCOPE_DIST_DIR.is_dir():
-        app.mount(
-            "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
-        )
+    _mount_mettascope(app)
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -543,6 +538,7 @@ def load_replay_data(replay_uri: str) -> dict[str, Any]:
 
 def create_replay_app(replay_uri: str) -> FastAPI:
     app = FastAPI()
+    has_mettascope = _mount_mettascope(app)
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -551,6 +547,12 @@ def create_replay_app(replay_uri: str) -> FastAPI:
     @app.get("/client/replay")
     def replay_client(request: Request) -> RedirectResponse:
         replay_url = str(request.url_for("replay_data"))
+        if has_mettascope:
+            return RedirectResponse(
+                str(request.url_for("mettascope", path="mettascope.html"))
+                + "?"
+                + urlencode({"replay": replay_url})
+            )
         return RedirectResponse(
             METTASCOPE_REPLAY_URL_PREFIX + quote(replay_url, safe="")
         )
