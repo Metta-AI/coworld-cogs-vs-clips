@@ -365,11 +365,13 @@ def test_cogs_vs_clips_replay_client_redirects_to_mettascope(tmp_path: Path) -> 
         follow_redirects=False,
     )
     location = response.headers["location"]
-    replay_url = parse_qs(urlparse(location).query)["replay"][0]
+    query = parse_qs(urlparse(location).query)
+    replay_url = query["replay"][0]
 
     assert response.status_code == 307
     assert location.startswith(server_module.METTASCOPE_REPLAY_URL_PREFIX)
     assert replay_url == "http://testserver/replay-data"
+    assert query["autostart"] == ["true"]
     replay_response = client.get("/replay-data")
     assert json.loads(replay_response.content) == {
         "results": {"steps": 2},
@@ -408,11 +410,13 @@ def test_cogs_vs_clips_replay_client_uses_bundled_mettascope(
 
     response = client.get("/client/replay", follow_redirects=False)
     location = response.headers["location"]
-    replay_url = parse_qs(urlparse(location).query)["replay"][0]
+    query = parse_qs(urlparse(location).query)
+    replay_url = query["replay"][0]
 
     assert response.status_code == 307
     assert urlparse(location).path == "/mettascope/mettascope.html"
     assert replay_url == "http://testserver/replay-data"
+    assert query["autostart"] == ["true"]
     assert (
         client.get("/mettascope/mettascope.html").text
         == "<!doctype html><title>MettaScope</title>"
