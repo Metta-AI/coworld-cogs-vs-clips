@@ -551,10 +551,12 @@ def create_replay_app(replay_uri: str) -> FastAPI:
             return RedirectResponse(
                 str(request.url_for("mettascope", path="mettascope.html"))
                 + "?"
-                + urlencode({"replay": replay_url})
+                + urlencode({"replay": replay_url, "autostart": "true"})
             )
         return RedirectResponse(
-            METTASCOPE_REPLAY_URL_PREFIX + quote(replay_url, safe="")
+            METTASCOPE_REPLAY_URL_PREFIX
+            + quote(replay_url, safe="")
+            + "&autostart=true"
         )
 
     @app.get("/replay-data", name="replay_data")
