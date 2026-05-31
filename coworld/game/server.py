@@ -532,6 +532,10 @@ def load_replay_data(replay_uri: str) -> dict[str, Any]:
 
 def create_replay_app(replay_uri: str) -> FastAPI:
     app = FastAPI()
+    if METTASCOPE_DIST_DIR.is_dir():
+        app.mount(
+            "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
+        )
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -540,6 +544,12 @@ def create_replay_app(replay_uri: str) -> FastAPI:
     @app.get("/client/replay")
     def replay_client(request: Request) -> RedirectResponse:
         replay_url = str(request.url_for("replay_data"))
+        if METTASCOPE_DIST_DIR.is_dir():
+            return RedirectResponse(
+                str(request.url_for("mettascope", path="mettascope.html"))
+                + "?"
+                + urlencode({"replay": replay_url})
+            )
         return RedirectResponse(
             METTASCOPE_REPLAY_URL_PREFIX + quote(replay_url, safe="")
         )

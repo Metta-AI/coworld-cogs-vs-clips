@@ -390,6 +390,35 @@ def test_cogs_vs_clips_replay_client_redirects_to_mettascope(tmp_path: Path) -> 
     assert control_message == {"type": "control", "command": {"command": "pause"}}
 
 
+def test_cogs_vs_clips_replay_client_uses_bundled_mettascope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+    replay_path = tmp_path / "replay.json"
+    replay_path.write_text(
+        json.dumps({"results": {"steps": 2}, "frames": [{"tick": 0}]}), encoding="utf-8"
+    )
+    mettascope_dir = tmp_path / "mettascope"
+    mettascope_dir.mkdir()
+    (mettascope_dir / "mettascope.html").write_text(
+        "<!doctype html><title>MettaScope</title>", encoding="utf-8"
+    )
+    monkeypatch.setattr(server_module, "METTASCOPE_DIST_DIR", mettascope_dir)
+    client = TestClient(server_module.create_replay_app(replay_path.as_uri()))
+
+    response = client.get("/client/replay", follow_redirects=False)
+    location = response.headers["location"]
+    replay_url = parse_qs(urlparse(location).query)["replay"][0]
+
+    assert response.status_code == 307
+    assert urlparse(location).path == "/mettascope/mettascope.html"
+    assert replay_url == "http://testserver/replay-data"
+    assert (
+        client.get("/mettascope/mettascope.html").text
+        == "<!doctype html><title>MettaScope</title>"
+    )
+
+
 def _new_game(tmp_path: Path, *display_names: str):
     server_module = _load_cogs_vs_clips_server_module()
     names = display_names or ("Player 1", "Player 2")
