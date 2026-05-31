@@ -16,7 +16,9 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
     manifest["reporter"][0]["image"] = "ghcr.io/metta-ai/reporters-default:latest"
-    manifest["reporter"][1]["image"] = "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
+    manifest["reporter"][1]["image"] = (
+        "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
+    )
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (

@@ -367,6 +367,15 @@ def _artifact_path(uri: str, filename: str) -> Path:
     raise ValueError(f"Unsupported cogs_vs_clips artifact URI: {uri}")
 
 
+def _mount_mettascope(app: FastAPI) -> bool:
+    if not METTASCOPE_DIST_DIR.is_dir():
+        return False
+    app.mount(
+        "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
+    )
+    return True
+
+
 def create_app(
     config: dict[str, Any],
     results_path: Path,
@@ -384,10 +393,7 @@ def create_app(
         replay_uri=replay_uri,
     )
     app = FastAPI()
-    if METTASCOPE_DIST_DIR.is_dir():
-        app.mount(
-            "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
-        )
+    _mount_mettascope(app)
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -532,10 +538,7 @@ def load_replay_data(replay_uri: str) -> dict[str, Any]:
 
 def create_replay_app(replay_uri: str) -> FastAPI:
     app = FastAPI()
-    if METTASCOPE_DIST_DIR.is_dir():
-        app.mount(
-            "/mettascope", StaticFiles(directory=METTASCOPE_DIST_DIR), name="mettascope"
-        )
+    has_mettascope = _mount_mettascope(app)
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -544,7 +547,7 @@ def create_replay_app(replay_uri: str) -> FastAPI:
     @app.get("/client/replay")
     def replay_client(request: Request) -> RedirectResponse:
         replay_url = str(request.url_for("replay_data"))
-        if METTASCOPE_DIST_DIR.is_dir():
+        if has_mettascope:
             return RedirectResponse(
                 str(request.url_for("mettascope", path="mettascope.html"))
                 + "?"
