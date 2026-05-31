@@ -351,7 +351,7 @@ def test_cogs_vs_clips_live_replay_includes_mettascope_render_config(
     assert render_config["hud2"]["resource"] == "energy"
 
 
-def test_cogs_vs_clips_replay_client_redirects_to_mettascope(tmp_path: Path) -> None:
+def test_cogs_vs_clips_replay_client_bootstraps_mettascope(tmp_path: Path) -> None:
     server_module = _load_cogs_vs_clips_server_module()
     replay_path = tmp_path / "replay.json"
     replay_path.write_text(
@@ -360,18 +360,12 @@ def test_cogs_vs_clips_replay_client_redirects_to_mettascope(tmp_path: Path) -> 
     client = TestClient(server_module.create_replay_app(replay_path.as_uri()))
 
     assert client.get("/healthz").json() == {"ok": True}
-    response = client.get(
-        "/client/replay",
-        follow_redirects=False,
-    )
-    location = response.headers["location"]
-    query = parse_qs(urlparse(location).query)
-    replay_url = query["replay"][0]
+    response = client.get("/client/replay")
 
-    assert response.status_code == 307
-    assert location.startswith(server_module.METTASCOPE_REPLAY_URL_PREFIX)
-    assert replay_url == "http://testserver/replay-data"
-    assert query["autostart"] == ["true"]
+    assert response.status_code == 200
+    assert server_module.METTASCOPE_REPLAY_URL_PREFIX.removesuffix("?replay=") in response.text
+    assert 'new URL("../replay-data", window.location.href).href' in response.text
+    assert 'mettascopeUrl.searchParams.set("autostart", "true")' in response.text
     replay_response = client.get("/replay-data")
     assert json.loads(replay_response.content) == {
         "results": {"steps": 2},
@@ -408,15 +402,12 @@ def test_cogs_vs_clips_replay_client_uses_bundled_mettascope(
     monkeypatch.setattr(server_module, "METTASCOPE_DIST_DIR", mettascope_dir)
     client = TestClient(server_module.create_replay_app(replay_path.as_uri()))
 
-    response = client.get("/client/replay", follow_redirects=False)
-    location = response.headers["location"]
-    query = parse_qs(urlparse(location).query)
-    replay_url = query["replay"][0]
+    response = client.get("/client/replay")
 
-    assert response.status_code == 307
-    assert urlparse(location).path == "/mettascope/mettascope.html"
-    assert replay_url == "http://testserver/replay-data"
-    assert query["autostart"] == ["true"]
+    assert response.status_code == 200
+    assert 'new URL("../mettascope/mettascope.html", window.location.href)' in response.text
+    assert 'new URL("../replay-data", window.location.href).href' in response.text
+    assert 'mettascopeUrl.searchParams.set("autostart", "true")' in response.text
     assert (
         client.get("/mettascope/mettascope.html").text
         == "<!doctype html><title>MettaScope</title>"

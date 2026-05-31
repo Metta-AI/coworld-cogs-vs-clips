@@ -9,14 +9,14 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal, cast
-from urllib.parse import quote, unquote, urlencode, urlparse
+from urllib.parse import unquote, urlencode, urlparse
 
 import numpy as np
 import uvicorn
 from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
 from coworld.runner.io import read_data, write_data
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from mettagrid.config.mettagrid_config import MettaGridConfig
 from mettagrid.map_builder.map_builder import HasSeed
@@ -539,24 +539,30 @@ def load_replay_data(replay_uri: str) -> dict[str, Any]:
 def create_replay_app(replay_uri: str) -> FastAPI:
     app = FastAPI()
     has_mettascope = _mount_mettascope(app)
+    mettascope_url = (
+        "../mettascope/mettascope.html"
+        if has_mettascope
+        else METTASCOPE_REPLAY_URL_PREFIX.removesuffix("?replay=")
+    )
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
         return {"ok": True}
 
     @app.get("/client/replay")
-    def replay_client(request: Request) -> RedirectResponse:
-        replay_url = str(request.url_for("replay_data"))
-        if has_mettascope:
-            return RedirectResponse(
-                str(request.url_for("mettascope", path="mettascope.html"))
-                + "?"
-                + urlencode({"replay": replay_url, "autostart": "true"})
-            )
-        return RedirectResponse(
-            METTASCOPE_REPLAY_URL_PREFIX
-            + quote(replay_url, safe="")
-            + "&autostart=true"
+    def replay_client() -> HTMLResponse:
+        return HTMLResponse(
+            f"""<!doctype html>
+<meta charset="utf-8">
+<title>Cogs vs Clips Replay</title>
+<body>Loading replay...</body>
+<script>
+const mettascopeUrl = new URL({json.dumps(mettascope_url)}, window.location.href);
+mettascopeUrl.searchParams.set("replay", new URL("../replay-data", window.location.href).href);
+mettascopeUrl.searchParams.set("autostart", "true");
+window.location.replace(mettascopeUrl.href);
+</script>
+"""
         )
 
     @app.get("/replay-data", name="replay_data")
