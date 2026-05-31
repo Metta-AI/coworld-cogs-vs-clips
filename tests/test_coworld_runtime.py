@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import zlib
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
@@ -363,10 +364,13 @@ def test_cogs_vs_clips_replay_client_bootstraps_mettascope(tmp_path: Path) -> No
     response = client.get("/client/replay")
 
     assert response.status_code == 200
-    assert server_module.METTASCOPE_REPLAY_URL_PREFIX.removesuffix("?replay=") in response.text
-    assert 'new URL("../replay-data", window.location.href).href' in response.text
+    assert (
+        server_module.METTASCOPE_REPLAY_URL_PREFIX.removesuffix("?replay=")
+        in response.text
+    )
+    assert 'new URL("../replay-data.json", window.location.href).href' in response.text
     assert 'mettascopeUrl.searchParams.set("autostart", "true")' in response.text
-    replay_response = client.get("/replay-data")
+    replay_response = client.get("/replay-data.json")
     assert json.loads(replay_response.content) == {
         "results": {"steps": 2},
         "frames": [{"tick": 0}],
@@ -384,6 +388,29 @@ def test_cogs_vs_clips_replay_client_bootstraps_mettascope(tmp_path: Path) -> No
         "frames": [{"tick": 0}],
     }
     assert control_message == {"type": "control", "command": {"command": "pause"}}
+
+
+def test_cogs_vs_clips_replay_client_preserves_zlib_extension(
+    tmp_path: Path,
+) -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+    replay = {"results": {"steps": 2}, "frames": [{"tick": 0}]}
+    replay_path = tmp_path / "replay.json.z"
+    replay_path.write_bytes(zlib.compress(json.dumps(replay).encode("utf-8")))
+    client = TestClient(server_module.create_replay_app(replay_path.as_uri()))
+
+    response = client.get("/client/replay")
+
+    assert response.status_code == 200
+    assert (
+        'new URL("../replay-data.json.z", window.location.href).href' in response.text
+    )
+    assert client.get("/replay-data.json.z").content == replay_path.read_bytes()
+
+    with client.websocket_connect("/replay") as websocket:
+        replay_message = websocket.receive_json()
+
+    assert replay_message == {"type": "replay", **replay}
 
 
 def test_cogs_vs_clips_replay_client_uses_bundled_mettascope(
@@ -405,8 +432,11 @@ def test_cogs_vs_clips_replay_client_uses_bundled_mettascope(
     response = client.get("/client/replay")
 
     assert response.status_code == 200
-    assert 'new URL("../mettascope/mettascope.html", window.location.href)' in response.text
-    assert 'new URL("../replay-data", window.location.href).href' in response.text
+    assert (
+        'new URL("../mettascope/mettascope.html", window.location.href)'
+        in response.text
+    )
+    assert 'new URL("../replay-data.json", window.location.href).href' in response.text
     assert 'mettascopeUrl.searchParams.set("autostart", "true")' in response.text
     assert (
         client.get("/mettascope/mettascope.html").text
