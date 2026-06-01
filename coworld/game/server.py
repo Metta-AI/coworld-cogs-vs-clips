@@ -15,7 +15,7 @@ import numpy as np
 import uvicorn
 from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
 from coworld.runner.io import read_data, write_data
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from mettagrid.config.mettagrid_config import MettaGridConfig
@@ -529,11 +529,21 @@ def create_app(
 
 def load_replay_data(replay_uri: str) -> dict[str, Any]:
     replay_data = read_data(replay_uri)
-    if replay_uri.endswith(".json.gz"):
+    replay_extension = _replay_extension(replay_uri)
+    if replay_extension == ".json.gz":
         replay_data = gzip.decompress(replay_data)
-    elif replay_uri.endswith(".json.z"):
+    elif replay_extension == ".json.z":
         replay_data = zlib.decompress(replay_data)
     return json.loads(replay_data)
+
+
+def _replay_extension(replay_uri: str) -> str:
+    replay_path = urlparse(replay_uri).path
+    if replay_path.endswith(".json.gz"):
+        return ".json.gz"
+    if replay_path.endswith(".json.z"):
+        return ".json.z"
+    return ".json"
 
 
 def create_replay_app(replay_uri: str) -> FastAPI:
@@ -544,6 +554,8 @@ def create_replay_app(replay_uri: str) -> FastAPI:
         if has_mettascope
         else METTASCOPE_REPLAY_URL_PREFIX.removesuffix("?replay=")
     )
+    replay_data_path = f"/replay-data{_replay_extension(replay_uri)}"
+    replay_data_link = f"..{replay_data_path}"
 
     @app.get("/healthz")
     def healthz() -> dict[str, bool]:
@@ -558,14 +570,14 @@ def create_replay_app(replay_uri: str) -> FastAPI:
 <body>Loading replay...</body>
 <script>
 const mettascopeUrl = new URL({json.dumps(mettascope_url)}, window.location.href);
-mettascopeUrl.searchParams.set("replay", new URL("../replay-data", window.location.href).href);
+mettascopeUrl.searchParams.set("replay", new URL({json.dumps(replay_data_link)}, window.location.href).href);
 mettascopeUrl.searchParams.set("autostart", "true");
 window.location.replace(mettascopeUrl.href);
 </script>
 """
         )
 
-    @app.get("/replay-data", name="replay_data")
+    @app.get(replay_data_path, name="replay_data")
     def replay_data() -> Response:
         return Response(
             read_data(replay_uri),
