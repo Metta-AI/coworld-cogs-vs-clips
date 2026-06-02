@@ -21,7 +21,7 @@ def test_cogs_vs_clips_snapshot_exposes_admin_slot_state(tmp_path: Path) -> None
     assert snapshot["policy_names"] == ["Player 1", "Player 2"]
     assert snapshot["tick_mode"] == "fixed"
     assert snapshot["human_action_timeout_seconds"] == 5.0
-    assert game.episode.wait_for_all_players is True
+    assert game.episode.wait_for_all_players is False
     assert game.episode.policy_action_timeout_seconds == 0.1
     assert snapshot["slots"][0]["control_state"] == {
         "control_mode": "policy",
@@ -162,7 +162,7 @@ def test_cogs_vs_clips_rollout_routes_preserve_coworld_runtime_contract(
         assign = global_viewer.receive_json()
         baseline = global_viewer.receive_json()
         messages = []
-        for _ in range(20):
+        for _ in range(200):
             message = global_viewer.receive_json()
             messages.append(message)
             if message["type"] == "done":
@@ -185,6 +185,52 @@ def test_cogs_vs_clips_rollout_routes_preserve_coworld_runtime_contract(
     assert baseline["type"] == "step"
     assert baseline["objects"]
     assert any(message["type"] == "done" for message in messages)
+
+
+def test_cogs_vs_clips_rollout_finishes_when_player_never_connects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+    monkeypatch.setattr(server_module, "START_GRACE_SECONDS", 0.001)
+    results_path = tmp_path / "results.json"
+    client = TestClient(
+        server_module.create_app(
+            {
+                "mission": "machina_1",
+                "tokens": ["token-0", "token-1"],
+                "players": _players("Player 1", "Player 2"),
+                "max_steps": 1,
+                "seed": 0,
+                "step_seconds": 0.001,
+            },
+            results_path=results_path,
+            replay_path=tmp_path / "replay.json",
+            request_shutdown=lambda: None,
+        )
+    )
+
+    with (
+        client.websocket_connect("/player?slot=0&token=token-0") as player_0,
+        client.websocket_connect("/global") as global_viewer,
+    ):
+        player_0.receive_json()
+        player_0_observation = player_0.receive_json()
+        player_0.send_json(
+            {"type": "action", "action_name": "noop", "request_id": "step-0"}
+        )
+        global_viewer.receive_json()
+        global_viewer.receive_json()
+        global_viewer.receive_json()
+        messages = []
+        for _ in range(200):
+            message = global_viewer.receive_json()
+            messages.append(message)
+            if message["type"] == "done":
+                break
+
+    assert player_0_observation["type"] == "observation"
+    assert any(message["type"] == "done" for message in messages)
+    assert json.loads(results_path.read_text(encoding="utf-8"))["steps"] == 1
 
 
 def test_cogs_vs_clips_global_action_updates_policy_action(tmp_path: Path) -> None:
