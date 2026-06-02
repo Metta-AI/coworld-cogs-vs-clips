@@ -30,7 +30,7 @@ METTASCOPE_DIST_DIR = Path(
     os.environ.get("METTASCOPE_DIST_DIR", Path(__file__).parent / "mettascope")
 )
 GLOBAL_PROTOCOL = "mettagrid.mettascope.live.v1"
-START_GRACE_SECONDS = 0.5
+START_GRACE_SECONDS = 30.0
 POLICY_ACTION_TIMEOUT_SECONDS = 0.1
 GAME_HOST = os.environ.get("COGAME_HOST", "0.0.0.0")
 GAME_PORT = int(os.environ.get("COGAME_PORT", "8080"))
@@ -151,7 +151,7 @@ class CogsVsClipsGame:
             step_seconds=config["step_seconds"],
             message_context={"mission": self.mission_name},
             start_grace_seconds=START_GRACE_SECONDS,
-            wait_for_all_players=True,
+            wait_for_all_players=False,
             policy_action_timeout_seconds=POLICY_ACTION_TIMEOUT_SECONDS,
             disconnect_exception_types=(RuntimeError, WebSocketDisconnect),
             request_shutdown=request_shutdown,
