@@ -147,7 +147,16 @@
       "description": "Cogs vs Clips Coworld reference player over coworld.player.v1."
     }
   ],
-  "commissioner": [],
+  "commissioner": [
+    {
+      "id": "cogs-vs-clips-commissioner",
+      "type": "commissioner",
+      "name": "Cogs vs Clips Commissioner",
+      "description": "Cogs vs Clips slot-balanced commissioner with mean-score rankings.",
+      "image": "{{COGS_VS_CLIPS_COMMISSIONER_IMAGE}}",
+      "source_url": "https://github.com/Metta-AI/commissioners/tree/main/commissioners/cogs_vs_clips/cogs_vs_clips_commissioner"
+    }
+  ],
   "reporter": [
     {
       "id": "softmax-default-reporter",
