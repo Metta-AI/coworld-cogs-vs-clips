@@ -26,5 +26,5 @@ services:
     image: ghcr.io/metta-ai/graders-cogs-v-clips:latest
     platform: linux/amd64
   cogs-vs-clips-commissioner:
-    image: ghcr.io/metta-ai/commissioners-cogs-vs-clips@sha256:9cba7a30dffe572893883a035a346d866ee24b21be358540fd024ddcd58c43dd
+    image: ghcr.io/metta-ai/commissioners-cogs-vs-clips@sha256:0f3090348ab5079762dc068fde9a3dbb54d164bea82048459bcb4aee37fb1960
     platform: linux/amd64
