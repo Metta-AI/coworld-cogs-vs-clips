@@ -6,6 +6,15 @@ from pathlib import Path
 from coworld.certifier import build_game_config, load_coworld_package
 
 
+def test_cogs_vs_clips_compose_uses_mutable_commissioner_for_resolve_upload() -> None:
+    compose_text = (Path(__file__).resolve().parents[1] / "compose.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "ghcr.io/metta-ai/commissioners-cogs-vs-clips:latest" in compose_text
+    assert "ghcr.io/metta-ai/commissioners-cogs-vs-clips@sha256:" not in compose_text
+
+
 def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     template_path = (
         Path(__file__).resolve().parents[1] / "coworld_manifest_template.json"
