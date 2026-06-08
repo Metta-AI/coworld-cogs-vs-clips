@@ -42,4 +42,5 @@ pytest
 ```bash
 coworld build compose.yaml coworld_manifest_template.json 0.2.18 tmp/coworld_manifest.json
 coworld certify tmp/coworld_manifest.json
+coworld resolve-and-upload compose.yaml coworld_manifest_template.json 0.2.18 tmp/coworld_manifest.json
 ```
