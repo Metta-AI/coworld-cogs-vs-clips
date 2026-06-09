@@ -52,7 +52,6 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     assert package.manifest.game.protocols.global_.value == (
         "https://github.com/Metta-AI/coworld-cogs-vs-clips/blob/main/coworld/game/docs/global_protocol_spec.md"
     )
-    assert pages["rules.md"] == "https://softmax.com/play_cogsvsclips.md#game-rules"
     assert pages["play_cogsvsclips.md"] == "https://softmax.com/play_cogsvsclips.md"
     assert (
         pages["game-source"]
@@ -82,10 +81,24 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
         package.manifest.reporter[0].image
         == "ghcr.io/metta-ai/reporters-default:latest"
     )
+    assert (
+        package.manifest.reporter[0].source_url
+        == "https://github.com/Metta-AI/reporters/tree/main/reporters/default"
+    )
     assert package.manifest.reporter[1].id == "cogs-vs-clips-summarizer"
     assert (
         package.manifest.reporter[1].image
         == "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
+    )
+    assert (
+        package.manifest.reporter[1].source_url
+        == "https://github.com/Metta-AI/reporters/tree/main/reporters/cogs_vs_clips/cogs_vs_clips_summarizer"
+    )
+    assert package.manifest.grader is not None
+    assert len(package.manifest.grader) == 1
+    assert (
+        package.manifest.grader[0].source_url
+        == "https://github.com/Metta-AI/graders/tree/main/graders/cogs_v_clips/cogs_v_clips_grader"
     )
     daily_variant = next(
         variant

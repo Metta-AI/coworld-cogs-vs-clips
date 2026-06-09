@@ -102,14 +102,6 @@
       },
       "pages": [
         {
-          "id": "rules.md",
-          "title": "rules.md",
-          "content": {
-            "type": "uri",
-            "value": "https://softmax.com/play_cogsvsclips.md#game-rules"
-          }
-        },
-        {
           "id": "play_cogsvsclips.md",
           "title": "play_cogsvsclips.md",
           "content": {
@@ -152,7 +144,7 @@
       "id": "cogs-vs-clips-commissioner",
       "type": "commissioner",
       "name": "Cogs vs Clips Commissioner",
-      "description": "Cogs vs Clips slot-balanced commissioner with mean-score rankings.",
+      "description": "Cogs vs Clips commissioner with slot-balanced competition rounds and isolated qualifier rounds.",
       "image": "{{COGS_VS_CLIPS_COMMISSIONER_IMAGE}}",
       "source_url": "https://github.com/Metta-AI/commissioners/tree/main/commissioners/cogs_vs_clips/cogs_vs_clips_commissioner"
     }
@@ -163,14 +155,16 @@
       "type": "reporter",
       "name": "Softmax Default Reporter",
       "description": "Softmax-published default reporter: writes a one-paragraph Markdown summary derived from results.json scores.",
-      "image": "{{REPORTER_IMAGE}}"
+      "image": "{{REPORTER_IMAGE}}",
+      "source_url": "https://github.com/Metta-AI/reporters/tree/main/reporters/default"
     },
     {
       "id": "cogs-vs-clips-summarizer",
       "type": "reporter",
       "name": "Cogs vs Clips Summarizer",
       "description": "Decodes Cogs vs Clips replay data into a Markdown summary, event-log Parquet, behavior_summary.json, and trace.jsonl.",
-      "image": "{{COGS_VS_CLIPS_REPORTER_IMAGE}}"
+      "image": "{{COGS_VS_CLIPS_REPORTER_IMAGE}}",
+      "source_url": "https://github.com/Metta-AI/reporters/tree/main/reporters/cogs_vs_clips/cogs_vs_clips_summarizer"
     }
   ],
   "grader": [
@@ -179,7 +173,8 @@
       "type": "grader",
       "name": "Cogs vs Clips Grader",
       "description": "Reference Cogs vs Clips grader: consumes replay/results artifacts and emits a scalar creator-interest score for ranking useful episodes.",
-      "image": "ghcr.io/metta-ai/graders-cogs-v-clips:latest"
+      "image": "ghcr.io/metta-ai/graders-cogs-v-clips:latest",
+      "source_url": "https://github.com/Metta-AI/graders/tree/main/graders/cogs_v_clips/cogs_v_clips_grader"
     }
   ],
   "diagnoser": [],
