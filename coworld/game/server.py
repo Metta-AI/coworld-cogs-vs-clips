@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlencode, urlparse
 
 import numpy as np
 import uvicorn
+from cogsguard.missions.four_score import FourScoreMission
 from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
 from coworld.runner.io import read_data, write_data
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -34,6 +35,7 @@ START_GRACE_SECONDS = 30.0
 POLICY_ACTION_TIMEOUT_SECONDS = 0.1
 GAME_HOST = os.environ.get("COGAME_HOST", "0.0.0.0")
 GAME_PORT = int(os.environ.get("COGAME_PORT", "8080"))
+FOUR_SCORE_AGENT_COUNT = 32
 
 
 def build_initial_replay(sim) -> tuple[dict[str, Any], list[str], dict[int, int]]:
@@ -335,6 +337,16 @@ def make_env(
         mission = make_machina1_mission(num_agents=num_agents, max_steps=max_steps)
     elif mission_name == "cogsguard":
         mission = make_cogsguard_mission(num_agents=num_agents, max_steps=max_steps)
+    elif mission_name == "four_score":
+        if num_agents != FOUR_SCORE_AGENT_COUNT:
+            raise ValueError(f"four_score requires {FOUR_SCORE_AGENT_COUNT} agents")
+        mission = FourScoreMission(
+            num_agents=num_agents,
+            num_cogs=num_agents,
+            min_cogs=num_agents,
+            max_cogs=num_agents,
+            max_steps=max_steps,
+        )
     else:
         raise ValueError(f"Unknown mission: {mission_name}")
     env = mission.make_env()

@@ -187,6 +187,28 @@ def test_cogs_vs_clips_rollout_routes_preserve_coworld_runtime_contract(
     assert any(message["type"] == "done" for message in messages)
 
 
+def test_cogs_vs_clips_four_score_runtime_uses_32_agent_mission(tmp_path: Path) -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+    game = server_module.CogsVsClipsGame(
+        {
+            "mission": "four_score",
+            "tokens": [f"token-{slot}" for slot in range(32)],
+            "players": _players(*[f"Player {slot + 1}" for slot in range(32)]),
+            "max_steps": 3,
+            "seed": 0,
+            "step_seconds": 0.02,
+        },
+        results_path=tmp_path / "results.json",
+        replay_path=None,
+        request_shutdown=lambda: None,
+    )
+
+    assert game.sim.num_agents == 32
+    assert game.initial_replay["map_size"] == [130, 130]
+    assert game.global_status()["mission"] == "four_score"
+    assert len(game.results()["scores"]) == 32
+
+
 def test_cogs_vs_clips_rollout_finishes_when_player_never_connects(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
