@@ -123,3 +123,59 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
         "step_seconds": 0.02,
         "tokens": tokens,
     }
+
+
+def test_four_score_coworld_manifest_validates(tmp_path: Path) -> None:
+    template_path = (
+        Path(__file__).resolve().parents[1] / "coworld_four_score_manifest_template.json"
+    )
+    manifest_path = tmp_path / "coworld_manifest.json"
+    manifest = json.loads(template_path.read_text(encoding="utf-8"))
+    manifest["game"]["version"] = "0.1.0"
+    manifest["game"]["runnable"]["image"] = "coworld-four-score-game:latest"
+    manifest["player"][0]["image"] = "coworld-four-score-reference-player:latest"
+    manifest["reporter"][0]["image"] = "ghcr.io/metta-ai/reporters-default:latest"
+    manifest["reporter"][1]["image"] = (
+        "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
+    )
+    manifest["commissioner"][0]["image"] = (
+        "ghcr.io/metta-ai/commissioners-four-score:latest"
+    )
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    package = load_coworld_package(manifest_path)
+    tokens = [f"token-{index}" for index in range(32)]
+    config = build_game_config(package, tokens)
+    pages = {page.id: page.content.value for page in package.manifest.game.docs.pages}
+
+    assert package.manifest.game.name == "four_score"
+    assert package.manifest.game.runnable.source_url == (
+        "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+    )
+    assert (
+        pages["game-source"]
+        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+    )
+    assert (
+        pages["player"]
+        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player"
+    )
+    assert package.manifest.player[0].source_url == (
+        "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player"
+    )
+    assert [role.id for role in package.manifest.commissioner] == ["four-score-commissioner"]
+    assert package.manifest.commissioner[0].source_url == (
+        "https://github.com/Metta-AI/commissioners/tree/main/commissioners/ruleset_strategy_commissioner"
+    )
+    assert [role.id for role in package.manifest.reporter] == [
+        "softmax-default-reporter",
+        "cogs-vs-clips-summarizer",
+    ]
+    daily_variant = package.manifest.variants[0]
+    assert daily_variant.id == "four-score-daily"
+    assert daily_variant.game_config["mission"] == "four_score"
+    assert len(daily_variant.game_config["players"]) == 32
+    assert config["mission"] == "four_score"
+    assert config["max_steps"] == 3
+    assert config["tokens"] == tokens
+    assert len(config["players"]) == 32
