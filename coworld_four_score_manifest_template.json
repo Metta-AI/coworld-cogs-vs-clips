@@ -102,6 +102,14 @@
       },
       "pages": [
         {
+          "id": "rules.md",
+          "title": "rules.md",
+          "content": {
+            "type": "uri",
+            "value": "https://softmax.com/play_cogsvsclips.md#game-rules"
+          }
+        },
+        {
           "id": "play_cogsvsclips.md",
           "title": "play_cogsvsclips.md",
           "content": {
