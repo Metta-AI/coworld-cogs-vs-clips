@@ -3,16 +3,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from coworld.certifier import build_game_config, load_coworld_package
+from coworld.certifier import build_manifest_episode_job_spec, load_coworld_package
+from coworld.manifest_validation import game_config_with_tokens
 
 
-def test_cogs_vs_clips_compose_uses_mutable_commissioner_for_resolve_upload() -> None:
+def test_cogs_vs_clips_compose_builds_local_commissioner_for_upload() -> None:
     compose_text = (Path(__file__).resolve().parents[1] / "compose.yaml").read_text(
         encoding="utf-8"
     )
 
-    assert "ghcr.io/metta-ai/commissioners-cogs-vs-clips:latest" in compose_text
-    assert "ghcr.io/metta-ai/commissioners-cogs-vs-clips@sha256:" not in compose_text
+    assert "coworld-cogs-vs-clips-commissioner:latest" in compose_text
+    assert "RULESET_STRATEGY_CONFIG_NAME: cogs_vs_clips" in compose_text
+    assert "ghcr.io/metta-ai/commissioners-cogs-vs-clips" not in compose_text
 
 
 def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
@@ -24,10 +26,9 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["version"] = "0.2.18"
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
-    manifest["reporter"][0]["image"] = "ghcr.io/metta-ai/reporters-default:latest"
-    manifest["reporter"][1]["image"] = (
-        "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
-    )
+    manifest["reporter"][0]["image"] = "coworld-cogs-vs-clips-default-reporter:latest"
+    manifest["reporter"][1]["image"] = "coworld-cogs-vs-clips-reporter:latest"
+    manifest["grader"][0]["image"] = "coworld-cogs-vs-clips-grader:latest"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (
@@ -37,7 +38,7 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
 
     package = load_coworld_package(manifest_path)
     tokens = [f"token-{index}" for index in range(8)]
-    config = build_game_config(package, tokens)
+    config = game_config_with_tokens(build_manifest_episode_job_spec(package).game_config, tokens)
     pages = {page.id: page.content.value for page in package.manifest.game.docs.pages}
 
     assert package.manifest.game.name == "cogs_vs_clips"
@@ -79,26 +80,26 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     assert package.manifest.reporter[0].id == "softmax-default-reporter"
     assert (
         package.manifest.reporter[0].image
-        == "ghcr.io/metta-ai/reporters-default:latest"
+        == "coworld-cogs-vs-clips-default-reporter:latest"
     )
     assert (
         package.manifest.reporter[0].source_url
-        == "https://github.com/Metta-AI/reporters/tree/main/reporters/default"
+        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/default"
     )
     assert package.manifest.reporter[1].id == "cogs-vs-clips-summarizer"
     assert (
         package.manifest.reporter[1].image
-        == "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
+        == "coworld-cogs-vs-clips-reporter:latest"
     )
     assert (
         package.manifest.reporter[1].source_url
-        == "https://github.com/Metta-AI/reporters/tree/main/reporters/cogs_vs_clips/cogs_vs_clips_summarizer"
+        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/cogs_vs_clips/cogs_vs_clips_summarizer"
     )
     assert package.manifest.grader is not None
     assert len(package.manifest.grader) == 1
     assert (
         package.manifest.grader[0].source_url
-        == "https://github.com/Metta-AI/graders/tree/main/graders/cogs_v_clips/cogs_v_clips_grader"
+        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/grader/graders/cogs_v_clips/cogs_v_clips_grader"
     )
     daily_variant = next(
         variant
@@ -134,18 +135,14 @@ def test_four_score_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["version"] = "0.1.0"
     manifest["game"]["runnable"]["image"] = "coworld-four-score-game:latest"
     manifest["player"][0]["image"] = "coworld-four-score-reference-player:latest"
-    manifest["reporter"][0]["image"] = "ghcr.io/metta-ai/reporters-default:latest"
-    manifest["reporter"][1]["image"] = (
-        "ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest"
-    )
-    manifest["commissioner"][0]["image"] = (
-        "ghcr.io/metta-ai/commissioners-four-score:latest"
-    )
+    manifest["reporter"][0]["image"] = "coworld-cogs-vs-clips-default-reporter:latest"
+    manifest["reporter"][1]["image"] = "coworld-cogs-vs-clips-reporter:latest"
+    manifest["commissioner"][0]["image"] = "coworld-four-score-commissioner:latest"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
     package = load_coworld_package(manifest_path)
     tokens = [f"token-{index}" for index in range(32)]
-    config = build_game_config(package, tokens)
+    config = game_config_with_tokens(build_manifest_episode_job_spec(package).game_config, tokens)
     pages = {page.id: page.content.value for page in package.manifest.game.docs.pages}
 
     assert package.manifest.game.name == "four_score"
@@ -165,7 +162,7 @@ def test_four_score_coworld_manifest_validates(tmp_path: Path) -> None:
     )
     assert [role.id for role in package.manifest.commissioner] == ["four-score-commissioner"]
     assert package.manifest.commissioner[0].source_url == (
-        "https://github.com/Metta-AI/commissioners/tree/main/commissioners/ruleset_strategy_commissioner"
+        "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     )
     assert [role.id for role in package.manifest.reporter] == [
         "softmax-default-reporter",

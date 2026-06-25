@@ -17,14 +17,37 @@ services:
       args:
         PLAYER_RUNTIME_PLATFORM: linux/amd64
   reporter:
-    image: ghcr.io/metta-ai/reporters-default:latest
+    image: coworld-cogs-vs-clips-default-reporter:latest
     platform: linux/amd64
+    build:
+      context: ./reporter
+      dockerfile: default/Dockerfile
   cogs-vs-clips-reporter:
-    image: ghcr.io/metta-ai/reporters-cogs-vs-clips-summarizer:latest
+    image: coworld-cogs-vs-clips-reporter:latest
     platform: linux/amd64
+    build:
+      context: ./reporter
+      dockerfile: cogs_vs_clips/cogs_vs_clips_summarizer/Dockerfile
   grader:
-    image: ghcr.io/metta-ai/graders-cogs-v-clips:latest
+    image: coworld-cogs-vs-clips-grader:latest
     platform: linux/amd64
+    build:
+      context: ./grader/graders/cogs_v_clips/cogs_v_clips_grader
   cogs-vs-clips-commissioner:
-    image: ghcr.io/metta-ai/commissioners-cogs-vs-clips:latest
+    image: coworld-cogs-vs-clips-commissioner:latest
     platform: linux/amd64
+    build:
+      context: ./commissioner
+      dockerfile: commissioners/Dockerfile
+      args:
+        COMMISSIONER_KEY: config_driven
+        RULESET_STRATEGY_CONFIG_NAME: cogs_vs_clips
+  four-score-commissioner:
+    image: coworld-four-score-commissioner:latest
+    platform: linux/amd64
+    build:
+      context: ./commissioner
+      dockerfile: commissioners/Dockerfile
+      args:
+        COMMISSIONER_KEY: config_driven
+        RULESET_STRATEGY_CONFIG_NAME: four_score

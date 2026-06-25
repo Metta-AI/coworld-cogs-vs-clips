@@ -7,14 +7,24 @@
     "runnable": {
       "type": "game",
       "image": "{{GAME_IMAGE}}",
-      "run": ["python", "/app/server.py"],
+      "run": [
+        "python",
+        "/app/server.py"
+      ],
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
     },
     "config_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "additionalProperties": false,
-      "required": ["tokens", "players", "mission", "max_steps", "seed", "step_seconds"],
+      "required": [
+        "tokens",
+        "players",
+        "mission",
+        "max_steps",
+        "seed",
+        "step_seconds"
+      ],
       "properties": {
         "tokens": {
           "type": "array",
@@ -32,7 +42,9 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name"],
+            "required": [
+              "name"
+            ],
             "properties": {
               "name": {
                 "type": "string",
@@ -43,7 +55,10 @@
         },
         "mission": {
           "type": "string",
-          "enum": ["machina_1", "cogsguard"]
+          "enum": [
+            "machina_1",
+            "cogsguard"
+          ]
         },
         "max_steps": {
           "type": "integer",
@@ -65,7 +80,11 @@
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
       "additionalProperties": false,
-      "required": ["scores", "steps", "mission"],
+      "required": [
+        "scores",
+        "steps",
+        "mission"
+      ],
       "properties": {
         "scores": {
           "type": "array",
@@ -81,7 +100,10 @@
         },
         "mission": {
           "type": "string",
-          "enum": ["machina_1", "cogsguard"]
+          "enum": [
+            "machina_1",
+            "cogsguard"
+          ]
         }
       }
     },
@@ -134,7 +156,10 @@
       "name": "Reference Player",
       "type": "player",
       "image": "{{PLAYER_IMAGE}}",
-      "run": ["python", "/app/coworld_reference_player.py"],
+      "run": [
+        "python",
+        "/app/coworld_reference_player.py"
+      ],
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player",
       "description": "Cogs vs Clips Coworld reference player over coworld.player.v1."
     }
@@ -146,7 +171,7 @@
       "name": "Cogs vs Clips Commissioner",
       "description": "Cogs vs Clips commissioner with slot-balanced competition rounds and isolated qualifier rounds.",
       "image": "{{COGS_VS_CLIPS_COMMISSIONER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/commissioners/tree/main/commissioners/cogs_vs_clips/cogs_vs_clips_commissioner"
+      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     }
   ],
   "reporter": [
@@ -156,7 +181,7 @@
       "name": "Softmax Default Reporter",
       "description": "Softmax-published default reporter: writes a one-paragraph Markdown summary derived from results.json scores.",
       "image": "{{REPORTER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/reporters/tree/main/reporters/default"
+      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/default"
     },
     {
       "id": "cogs-vs-clips-summarizer",
@@ -164,7 +189,7 @@
       "name": "Cogs vs Clips Summarizer",
       "description": "Decodes Cogs vs Clips replay data into a Markdown summary, event-log Parquet, behavior_summary.json, and trace.jsonl.",
       "image": "{{COGS_VS_CLIPS_REPORTER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/reporters/tree/main/reporters/cogs_vs_clips/cogs_vs_clips_summarizer"
+      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/cogs_vs_clips/cogs_vs_clips_summarizer"
     }
   ],
   "grader": [
@@ -173,8 +198,8 @@
       "type": "grader",
       "name": "Cogs vs Clips Grader",
       "description": "Reference Cogs vs Clips grader: consumes replay/results artifacts and emits a scalar creator-interest score for ranking useful episodes.",
-      "image": "ghcr.io/metta-ai/graders-cogs-v-clips:latest",
-      "source_url": "https://github.com/Metta-AI/graders/tree/main/graders/cogs_v_clips/cogs_v_clips_grader"
+      "image": "{{GRADER_IMAGE}}",
+      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/grader/graders/cogs_v_clips/cogs_v_clips_grader"
     }
   ],
   "diagnoser": [],
@@ -185,14 +210,30 @@
       "name": "Machina 1 Daily",
       "game_config": {
         "players": [
-          { "name": "Player 1" },
-          { "name": "Player 2" },
-          { "name": "Player 3" },
-          { "name": "Player 4" },
-          { "name": "Player 5" },
-          { "name": "Player 6" },
-          { "name": "Player 7" },
-          { "name": "Player 8" }
+          {
+            "name": "Player 1"
+          },
+          {
+            "name": "Player 2"
+          },
+          {
+            "name": "Player 3"
+          },
+          {
+            "name": "Player 4"
+          },
+          {
+            "name": "Player 5"
+          },
+          {
+            "name": "Player 6"
+          },
+          {
+            "name": "Player 7"
+          },
+          {
+            "name": "Player 8"
+          }
         ],
         "mission": "machina_1",
         "max_steps": 10000,
@@ -205,14 +246,30 @@
   "certification": {
     "game_config": {
       "players": [
-        { "name": "Player 1" },
-        { "name": "Player 2" },
-        { "name": "Player 3" },
-        { "name": "Player 4" },
-        { "name": "Player 5" },
-        { "name": "Player 6" },
-        { "name": "Player 7" },
-        { "name": "Player 8" }
+        {
+          "name": "Player 1"
+        },
+        {
+          "name": "Player 2"
+        },
+        {
+          "name": "Player 3"
+        },
+        {
+          "name": "Player 4"
+        },
+        {
+          "name": "Player 5"
+        },
+        {
+          "name": "Player 6"
+        },
+        {
+          "name": "Player 7"
+        },
+        {
+          "name": "Player 8"
+        }
       ],
       "mission": "cogsguard",
       "max_steps": 3,
