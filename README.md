@@ -1,4 +1,19 @@
-# coworld-cogs-vs-clips
+# Coworld Cogs vs Clips
+
+<!-- COWORLD-REPO-STATUS:START -->
+> [!NOTE]
+> Coworld repo status: **template** (`coworld-template`).
+> Canonical repository: `Metta-AI/coworld-cogs-vs-clips`.
+> Manifest path: `coworld_manifest_template.json`.
+> Build path: `Dockerfile.game`, `Dockerfile.player`
+> Certification: blocked until this template resolves to a concrete `coworld_manifest.json` and `uv run coworld certify coworld_manifest.json` passes.
+>
+> Missing pieces:
+> - [ ] Resolve `coworld_manifest_template.json` into a concrete root `coworld_manifest.json`.
+> - [ ] Confirm buildable game and starter-player images.
+> - [ ] Run `uv run coworld certify coworld_manifest.json` and record the passing command.
+<!-- COWORLD-REPO-STATUS:END -->
+
 
 Cogs vs Clips Coworld source package.
 
