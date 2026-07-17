@@ -1,27 +1,27 @@
 services:
   game:
-    image: coworld-cogs-vs-clips-game:latest
+    image: coworld-four-score-game:latest
     platform: linux/amd64
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile.game
       args:
         METTASCOPE_BUILDER_PLATFORM: linux/amd64
         GAME_RUNTIME_PLATFORM: linux/amd64
   player:
-    image: coworld-cogs-vs-clips-reference-player:latest
+    image: coworld-four-score-reference-player:latest
     platform: linux/amd64
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile.player
       args:
         PLAYER_RUNTIME_PLATFORM: linux/amd64
-  cogs-vs-clips-commissioner:
-    image: coworld-cogs-vs-clips-commissioner:latest
+  four-score-commissioner:
+    image: coworld-four-score-commissioner:latest
     platform: linux/amd64
     build:
-      context: ./commissioner
+      context: ../commissioner
       dockerfile: commissioners/Dockerfile
       args:
         COMMISSIONER_KEY: config_driven
-        RULESET_STRATEGY_CONFIG_NAME: cogs_vs_clips
+        RULESET_STRATEGY_CONFIG_NAME: four_score

@@ -174,34 +174,8 @@
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     }
   ],
-  "reporter": [
-    {
-      "id": "softmax-default-reporter",
-      "type": "reporter",
-      "name": "Softmax Default Reporter",
-      "description": "Softmax-published default reporter: writes a one-paragraph Markdown summary derived from results.json scores.",
-      "image": "{{REPORTER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/default"
-    },
-    {
-      "id": "cogs-vs-clips-summarizer",
-      "type": "reporter",
-      "name": "Cogs vs Clips Summarizer",
-      "description": "Decodes Cogs vs Clips replay data into a Markdown summary, event-log Parquet, behavior_summary.json, and trace.jsonl.",
-      "image": "{{COGS_VS_CLIPS_REPORTER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/cogs_vs_clips/cogs_vs_clips_summarizer"
-    }
-  ],
-  "grader": [
-    {
-      "id": "cogs-v-clips-grader",
-      "type": "grader",
-      "name": "Cogs vs Clips Grader",
-      "description": "Reference Cogs vs Clips grader: consumes replay/results artifacts and emits a scalar creator-interest score for ranking useful episodes.",
-      "image": "{{GRADER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/grader/graders/cogs_v_clips/cogs_v_clips_grader"
-    }
-  ],
+  "reporter": [],
+  "grader": [],
   "diagnoser": [],
   "optimizer": [],
   "variants": [
