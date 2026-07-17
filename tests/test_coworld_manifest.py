@@ -26,9 +26,6 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["version"] = "0.2.18"
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
-    manifest["reporter"][0]["image"] = "coworld-cogs-vs-clips-default-reporter:latest"
-    manifest["reporter"][1]["image"] = "coworld-cogs-vs-clips-reporter:latest"
-    manifest["grader"][0]["image"] = "coworld-cogs-vs-clips-grader:latest"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (
@@ -128,15 +125,13 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
 
 def test_four_score_coworld_manifest_validates(tmp_path: Path) -> None:
     template_path = (
-        Path(__file__).resolve().parents[1] / "coworld_four_score_manifest_template.json"
+        Path(__file__).resolve().parents[1] / "four_score" / "coworld_manifest_template.json"
     )
     manifest_path = tmp_path / "coworld_manifest.json"
     manifest = json.loads(template_path.read_text(encoding="utf-8"))
     manifest["game"]["version"] = "0.1.0"
     manifest["game"]["runnable"]["image"] = "coworld-four-score-game:latest"
     manifest["player"][0]["image"] = "coworld-four-score-reference-player:latest"
-    manifest["reporter"][0]["image"] = "coworld-cogs-vs-clips-default-reporter:latest"
-    manifest["reporter"][1]["image"] = "coworld-cogs-vs-clips-reporter:latest"
     manifest["commissioner"][0]["image"] = "coworld-four-score-commissioner:latest"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
