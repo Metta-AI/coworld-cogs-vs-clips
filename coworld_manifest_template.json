@@ -4,6 +4,9 @@
     "name": "cogs_vs_clips",
     "description": "Cogs vs Clips packaged as a Coworld backed by CogsGuard and MettaGrid.",
     "owner": "coworld@softmax.com",
+    "replay_viewer": {
+      "bundle": "static-replay-viewer"
+    },
     "runnable": {
       "type": "game",
       "image": "{{GAME_IMAGE}}",

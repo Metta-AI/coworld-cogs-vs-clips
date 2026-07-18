@@ -1,15 +1,18 @@
 ARG METTASCOPE_BUILDER_PLATFORM=linux/amd64
 ARG GAME_RUNTIME_PLATFORM=linux/amd64
 FROM --platform=${METTASCOPE_BUILDER_PLATFORM} emscripten/emsdk:4.0.15 AS mettascope-builder
-COPY --from=docker.io/astral/uv:0.11.6 /uv /uvx /bin/
 
 ARG NIMBY_VERSION=0.1.26
 ARG NIM_VERSION=2.2.6
+ARG METTAGRID_VERSION=0.26.21
+ARG METTAGRID_SDIST_SHA256=74964995622dff92c72ff978e8b5ec6cb8d4906e50cfc0c5c5d28bdb9b2d246a
+ARG METTAGRID_ASSETS_SHA256=2ab91ae1a5eaa59a559402e2bc15989dd65add9467c9a9487281cd966516fea6
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 RUN ARCH="$(uname -m)" && \
@@ -22,14 +25,19 @@ RUN ARCH="$(uname -m)" && \
 
 ENV PATH="/root/.nimby/nim/bin:${PATH}"
 
-ENV UV_HTTP_TIMEOUT=300
-RUN uv python install 3.12 && \
-    uv venv /opt/mettagrid-python && \
-    uv pip install --python /opt/mettagrid-python/bin/python "mettagrid>=0.26.21"
-
 WORKDIR /mettascope
-RUN METTAGRID_DIR="$(/opt/mettagrid-python/bin/python -c 'import mettagrid; print(mettagrid.__path__[0])')" && \
-    cp -a "${METTAGRID_DIR}/nim/mettascope/." .
+RUN curl -fsSL "https://files.pythonhosted.org/packages/source/m/mettagrid/mettagrid-${METTAGRID_VERSION}.tar.gz" \
+        -o /tmp/mettagrid.tar.gz && \
+    echo "${METTAGRID_SDIST_SHA256}  /tmp/mettagrid.tar.gz" | sha256sum --check && \
+    mkdir /tmp/mettagrid && \
+    tar -xzf /tmp/mettagrid.tar.gz -C /tmp/mettagrid --strip-components=1 && \
+    cp -a /tmp/mettagrid/nim/mettascope/. . && \
+    curl -fsSL "https://softmax-public.s3.amazonaws.com/mettagrid-assets/v${METTAGRID_VERSION}/mettagrid-assets.zip" \
+        -o /tmp/mettagrid-assets.zip && \
+    echo "${METTAGRID_ASSETS_SHA256}  /tmp/mettagrid-assets.zip" | sha256sum --check && \
+    rm -rf data && \
+    unzip -q /tmp/mettagrid-assets.zip && \
+    rm -rf /tmp/mettagrid /tmp/mettagrid.tar.gz /tmp/mettagrid-assets.zip
 RUN nimby sync -g nimby.lock
 RUN nim c -d:emscripten -d:release src/mettascope.nim && \
     test -f dist/mettascope.html && \
@@ -38,17 +46,20 @@ RUN nim c -d:emscripten -d:release src/mettascope.nim && \
     test -f dist/mettascope.data && \
     ls -lh dist/
 
+FROM scratch AS replay-viewer-bundle
+COPY replay-viewer/index.html /index.html
+COPY --from=mettascope-builder /mettascope/dist /mettascope
+CMD ["/index.html"]
+
 FROM --platform=${GAME_RUNTIME_PLATFORM} python:3.12-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    git \
-    && rm -rf /var/lib/apt/lists/*
+ARG COWORLD_VERSION=0.1.33
+ARG METTAGRID_VERSION=0.26.21
 
 RUN pip install --no-cache-dir \
-    "coworld @ git+https://github.com/Metta-AI/coworld.git@main" \
+    "coworld==${COWORLD_VERSION}" \
     "fastapi>=0.115.5" \
-    "mettagrid>=0.26.21" \
+    "mettagrid==${METTAGRID_VERSION}" \
     "uvicorn[standard]>=0.34.2"
 
 COPY pyproject.toml README.md /tmp/cogsguard/
