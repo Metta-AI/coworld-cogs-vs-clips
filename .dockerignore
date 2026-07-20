@@ -3,6 +3,8 @@
 .pytest_cache
 __pycache__
 *.pyc
+dist
+tmp
 commissioner
 reporter
 grader

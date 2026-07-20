@@ -5,7 +5,6 @@ from pathlib import Path
 
 from coworld.certifier import build_manifest_episode_job_spec, load_coworld_package
 from coworld.manifest_validation import game_config_with_tokens
-from coworld.types import CoworldGameManifest
 
 
 def test_cogs_vs_clips_compose_builds_local_commissioner_for_upload() -> None:
@@ -27,12 +26,8 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["version"] = "0.2.18"
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
+    assert manifest["tags"] == ["multi-agent", "resource-management", "strategy"]
     assert manifest["game"]["replay_viewer"] == {"bundle": "static-replay-viewer"}
-    supports_replay_viewer = "replay_viewer" in CoworldGameManifest.model_fields
-    if not supports_replay_viewer:
-        # PyPI coworld 0.1.33 predates static bundles. Keep the released package
-        # exercising the rest of the manifest until the 0.1.34 release lands.
-        manifest["game"].pop("replay_viewer")
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (
@@ -46,9 +41,8 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     pages = {page.id: page.content.value for page in package.manifest.game.docs.pages}
 
     assert package.manifest.game.name == "cogs_vs_clips"
-    if supports_replay_viewer:
-        assert package.manifest.game.replay_viewer is not None
-        assert package.manifest.game.replay_viewer.bundle == "static-replay-viewer"
+    assert package.manifest.game.replay_viewer is not None
+    assert package.manifest.game.replay_viewer.bundle == "static-replay-viewer"
     assert package.manifest.game.docs.readme is not None
     assert (
         package.manifest.game.docs.readme.value

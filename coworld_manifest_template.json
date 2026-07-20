@@ -1,5 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/Metta-AI/coworld/main/src/coworld/coworld_manifest_schema.json",
+  "tags": [
+    "multi-agent",
+    "resource-management",
+    "strategy"
+  ],
   "game": {
     "name": "cogs_vs_clips",
     "description": "Cogs vs Clips packaged as a Coworld backed by CogsGuard and MettaGrid.",
