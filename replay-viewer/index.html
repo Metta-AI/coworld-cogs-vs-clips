@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cogs vs Clips Replay</title>
+    <style>
+      html, body, iframe {
+        border: 0;
+        height: 100%;
+        margin: 0;
+        width: 100%;
+      }
+      body {
+        background: #05070a;
+        color: #d8dee9;
+        font: 14px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        overflow: hidden;
+      }
+      iframe {
+        display: block;
+      }
+      #status {
+        align-items: center;
+        background: #101418;
+        display: flex;
+        inset: 0;
+        justify-content: center;
+        padding: 24px;
+        position: fixed;
+        text-align: center;
+        z-index: 1;
+      }
+      #status.error {
+        color: #ff8f8f;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status" role="status">Loading replay…</div>
+    <iframe id="viewer" title="Cogs vs Clips replay" allow="fullscreen" allowfullscreen></iframe>
+    <script type="module">
+      const status = document.getElementById('status')
+      const viewer = document.getElementById('viewer')
+      const replayUrl = new URLSearchParams(window.location.search).get('replay')
+
+      function fail(message) {
+        status.className = 'error'
+        status.textContent = `Unable to load replay: ${message}`
+      }
+
+      if (!replayUrl) {
+        fail('the replay query parameter is missing')
+      } else {
+        fetch(replayUrl).then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          response.body?.cancel()
+          const rendererReplayUrl = new URL(replayUrl)
+          if (rendererReplayUrl.pathname.endsWith('.replay')) {
+            // MettaScope 0.26.21 already understands the current v4 JSON
+            // payload, but dispatches its parser by filename suffix. A fragment
+            // supplies that format hint without changing the replay request.
+            rendererReplayUrl.hash = 'replay.json'
+          }
+          const mettascopeUrl = new URL('./mettascope/mettascope.html', window.location.href)
+          mettascopeUrl.searchParams.set('replay', rendererReplayUrl.href)
+          mettascopeUrl.searchParams.set('autostart', 'true')
+          viewer.addEventListener('load', () => status.remove(), { once: true })
+          viewer.src = mettascopeUrl.href
+        }).catch((error) => fail(error.message))
+      }
+    </script>
+  </body>
+</html>

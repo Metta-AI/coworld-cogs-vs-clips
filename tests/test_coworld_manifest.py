@@ -26,6 +26,8 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     manifest["game"]["version"] = "0.2.18"
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
+    assert manifest["tags"] == ["multi-agent", "resource-management", "strategy"]
+    assert manifest["game"]["replay_viewer"] == {"bundle": "static-replay-viewer"}
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (
@@ -39,6 +41,8 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
     pages = {page.id: page.content.value for page in package.manifest.game.docs.pages}
 
     assert package.manifest.game.name == "cogs_vs_clips"
+    assert package.manifest.game.replay_viewer is not None
+    assert package.manifest.game.replay_viewer.bundle == "static-replay-viewer"
     assert package.manifest.game.docs.readme is not None
     assert (
         package.manifest.game.docs.readme.value
@@ -74,30 +78,8 @@ def test_cogs_vs_clips_coworld_manifest_validates(tmp_path: Path) -> None:
         package.manifest.player[0].source_url
         == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player"
     )
-    assert package.manifest.reporter[0].id == "softmax-default-reporter"
-    assert (
-        package.manifest.reporter[0].image
-        == "coworld-cogs-vs-clips-default-reporter:latest"
-    )
-    assert (
-        package.manifest.reporter[0].source_url
-        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/default"
-    )
-    assert package.manifest.reporter[1].id == "cogs-vs-clips-summarizer"
-    assert (
-        package.manifest.reporter[1].image
-        == "coworld-cogs-vs-clips-reporter:latest"
-    )
-    assert (
-        package.manifest.reporter[1].source_url
-        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/reporter/cogs_vs_clips/cogs_vs_clips_summarizer"
-    )
-    assert package.manifest.grader is not None
-    assert len(package.manifest.grader) == 1
-    assert (
-        package.manifest.grader[0].source_url
-        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/grader/graders/cogs_v_clips/cogs_v_clips_grader"
-    )
+    assert package.manifest.reporter == []
+    assert package.manifest.grader == []
     daily_variant = next(
         variant
         for variant in package.manifest.variants
@@ -159,10 +141,7 @@ def test_four_score_coworld_manifest_validates(tmp_path: Path) -> None:
     assert package.manifest.commissioner[0].source_url == (
         "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     )
-    assert [role.id for role in package.manifest.reporter] == [
-        "softmax-default-reporter",
-        "cogs-vs-clips-summarizer",
-    ]
+    assert package.manifest.reporter == []
     daily_variant = package.manifest.variants[0]
     assert daily_variant.id == "four-score-daily"
     assert daily_variant.game_config["mission"] == "four_score"
