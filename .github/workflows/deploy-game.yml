@@ -1,9 +1,10 @@
-# Rebuild and upload Cogs vs Clips from this repository's checked-in sources.
+# Rebuild and upload the shared Cogs vs Clips and Four Score Coworld from this
+# repository's checked-in sources.
 #
 # Required repository secret:
 #   SOFTMAX_API_TOKEN - a team usr_ token for https://softmax.com/api.
 # Coworld 0.1.34 owns the source build and static replay bundle lifecycle.
-name: Deploy Cogs vs Clips
+name: Deploy CogsGuard Coworld
 
 on:
   push:

@@ -25,3 +25,12 @@ services:
       args:
         COMMISSIONER_KEY: config_driven
         RULESET_STRATEGY_CONFIG_NAME: cogs_vs_clips
+  four-score-commissioner:
+    image: coworld-four-score-commissioner:latest
+    platform: linux/amd64
+    build:
+      context: ./commissioner
+      dockerfile: commissioners/Dockerfile
+      args:
+        COMMISSIONER_KEY: config_driven
+        RULESET_STRATEGY_CONFIG_NAME: four_score

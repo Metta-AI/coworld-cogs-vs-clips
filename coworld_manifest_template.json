@@ -7,7 +7,7 @@
   ],
   "game": {
     "name": "cogs_vs_clips",
-    "description": "Cogs vs Clips packaged as a Coworld backed by CogsGuard and MettaGrid.",
+    "description": "Cogs vs Clips and Four Score packaged as one Coworld backed by CogsGuard and MettaGrid.",
     "owner": "coworld@softmax.com",
     "replay_viewer": {
       "bundle": "static-replay-viewer"
@@ -37,7 +37,7 @@
         "tokens": {
           "type": "array",
           "minItems": 8,
-          "maxItems": 8,
+          "maxItems": 32,
           "items": {
             "type": "string",
             "minLength": 1
@@ -46,7 +46,7 @@
         "players": {
           "type": "array",
           "minItems": 8,
-          "maxItems": 8,
+          "maxItems": 32,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -65,7 +65,8 @@
           "type": "string",
           "enum": [
             "machina_1",
-            "cogsguard"
+            "cogsguard",
+            "four_score"
           ]
         },
         "max_steps": {
@@ -82,7 +83,42 @@
           "exclusiveMinimum": 0,
           "maximum": 1
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "tokens": {
+              "minItems": 8,
+              "maxItems": 8
+            },
+            "players": {
+              "minItems": 8,
+              "maxItems": 8
+            },
+            "mission": {
+              "enum": [
+                "machina_1",
+                "cogsguard"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "tokens": {
+              "minItems": 32,
+              "maxItems": 32
+            },
+            "players": {
+              "minItems": 32,
+              "maxItems": 32
+            },
+            "mission": {
+              "const": "four_score"
+            }
+          }
+        }
+      ]
     },
     "results_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -110,7 +146,8 @@
           "type": "string",
           "enum": [
             "machina_1",
-            "cogsguard"
+            "cogsguard",
+            "four_score"
           ]
         }
       }
@@ -131,6 +168,14 @@
         "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/blob/main/README.md"
       },
       "pages": [
+        {
+          "id": "rules.md",
+          "title": "rules.md",
+          "content": {
+            "type": "uri",
+            "value": "https://softmax.com/play_cogsvsclips.md#game-rules"
+          }
+        },
         {
           "id": "play_cogsvsclips.md",
           "title": "play_cogsvsclips.md",
@@ -169,7 +214,7 @@
         "/app/coworld_reference_player.py"
       ],
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player",
-      "description": "Cogs vs Clips Coworld reference player over coworld.player.v1."
+      "description": "CogsGuard Coworld reference player for Cogs vs Clips and Four Score over coworld.player.v1."
     }
   ],
   "commissioner": [
@@ -179,6 +224,14 @@
       "name": "Cogs vs Clips Commissioner",
       "description": "Cogs vs Clips commissioner with slot-balanced competition rounds and isolated qualifier rounds.",
       "image": "{{COGS_VS_CLIPS_COMMISSIONER_IMAGE}}",
+      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
+    },
+    {
+      "id": "four-score-commissioner",
+      "type": "commissioner",
+      "name": "Four Score Commissioner",
+      "description": "Four Score commissioner with four-team competition rounds and isolated qualifier rounds.",
+      "image": "{{FOUR_SCORE_COMMISSIONER_IMAGE}}",
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     }
   ],
@@ -223,6 +276,115 @@
         "step_seconds": 0.02
       },
       "description": "8-agent Cogs vs Clips daily tournament variant backed by the Cogsguard Machina 1 mission."
+    },
+    {
+      "id": "four-score-daily",
+      "name": "Four Score Daily",
+      "game_config": {
+        "players": [
+          {
+            "name": "Player 1"
+          },
+          {
+            "name": "Player 2"
+          },
+          {
+            "name": "Player 3"
+          },
+          {
+            "name": "Player 4"
+          },
+          {
+            "name": "Player 5"
+          },
+          {
+            "name": "Player 6"
+          },
+          {
+            "name": "Player 7"
+          },
+          {
+            "name": "Player 8"
+          },
+          {
+            "name": "Player 9"
+          },
+          {
+            "name": "Player 10"
+          },
+          {
+            "name": "Player 11"
+          },
+          {
+            "name": "Player 12"
+          },
+          {
+            "name": "Player 13"
+          },
+          {
+            "name": "Player 14"
+          },
+          {
+            "name": "Player 15"
+          },
+          {
+            "name": "Player 16"
+          },
+          {
+            "name": "Player 17"
+          },
+          {
+            "name": "Player 18"
+          },
+          {
+            "name": "Player 19"
+          },
+          {
+            "name": "Player 20"
+          },
+          {
+            "name": "Player 21"
+          },
+          {
+            "name": "Player 22"
+          },
+          {
+            "name": "Player 23"
+          },
+          {
+            "name": "Player 24"
+          },
+          {
+            "name": "Player 25"
+          },
+          {
+            "name": "Player 26"
+          },
+          {
+            "name": "Player 27"
+          },
+          {
+            "name": "Player 28"
+          },
+          {
+            "name": "Player 29"
+          },
+          {
+            "name": "Player 30"
+          },
+          {
+            "name": "Player 31"
+          },
+          {
+            "name": "Player 32"
+          }
+        ],
+        "mission": "four_score",
+        "max_steps": 10000,
+        "seed": 0,
+        "step_seconds": 0.02
+      },
+      "description": "32-agent Four Score daily tournament variant with four submitted policies expanded into four 8-agent teams."
     }
   ],
   "certification": {
