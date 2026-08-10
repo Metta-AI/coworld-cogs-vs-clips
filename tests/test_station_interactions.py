@@ -12,9 +12,9 @@ from variants.conftest import StationTestHarness
 from cogsguard.game import GEAR
 from cogsguard.game.elements import ElementsVariant
 from cogsguard.game.teams import TeamConfig
-from cogsguard.game.teams.hub import CvCHubConfig
+from cogsguard.game.teams.hub import CvCHubConfig, TeamHubVariant
 from mettagrid.config.filter import sharedTagPrefix
-from mettagrid.config.handler_config import Handler, updateTarget
+from mettagrid.config.handler_config import Handler, firstMatch, updateTarget
 from mettagrid.config.mettagrid_config import (
     ActionsConfig,
     AgentConfig,
@@ -117,6 +117,85 @@ class TestHub:
         inv = harness.agent_inventory()
         assert inv.get("hp", 0) >= 100, f"Expected hp >= 100 from territory healing, got {inv.get('hp', 0)}"
         assert inv.get("energy", 0) >= 50, f"Expected energy >= 50 from territory, got {inv.get('energy', 0)}"
+
+        harness.close()
+
+
+class TestHubHeartCapacity:
+    """Test that a full cog's hub-bump doesn't claim resources it can't carry."""
+
+    def _heart_hub(self, heart_cost: dict[str, int], heart_limit: int, hub_inventory: dict[str, int]):
+        team = TeamConfig(name="cogs", short_name="c")
+        hub = CvCHubConfig(team=team, elements=list(heart_cost), inventory=InventoryConfig(initial=hub_inventory))
+        station = hub.station_cfg()
+        station.on_use_handler = firstMatch(
+            [station.on_use_handler] + TeamHubVariant._hub_heart_handlers(team, heart_cost, heart_limit)
+        )
+        return station
+
+    def test_full_inventory_cog_does_not_waste_craft(self):
+        """A cog already carrying max hearts leaves banked hub elements untouched."""
+        station = self._heart_hub(heart_cost={"oxygen": 7}, heart_limit=2, hub_inventory={"oxygen": 7})
+
+        harness = StationTestHarness.create(
+            station=station,
+            agent_inventory={"heart": 2},
+            agent_team="cogs",
+            tags=["team:cogs"],
+            agent_limits={"heart": ResourceLimitsConfig(base=2, resources=["heart"])},
+        )
+
+        harness.move_onto_station()
+
+        inv = harness.agent_inventory()
+        hub_inv = harness.object_inventory("hub")
+
+        assert inv.get("heart", 0) == 2, f"Full cog should keep exactly 2 hearts, got {inv.get('heart', 0)}"
+        assert hub_inv.get("oxygen", 0) == 7, f"Hub oxygen should be untouched, got {hub_inv.get('oxygen', 0)}"
+
+        harness.close()
+
+    def test_non_full_cog_still_crafts(self):
+        """A cog with room still crafts a heart from banked hub elements."""
+        station = self._heart_hub(heart_cost={"oxygen": 7}, heart_limit=2, hub_inventory={"oxygen": 7})
+
+        harness = StationTestHarness.create(
+            station=station,
+            agent_inventory={"heart": 0},
+            agent_team="cogs",
+            tags=["team:cogs"],
+            agent_limits={"heart": ResourceLimitsConfig(base=2, resources=["heart"])},
+        )
+
+        harness.move_onto_station()
+
+        inv = harness.agent_inventory()
+        hub_inv = harness.object_inventory("hub")
+
+        assert inv.get("heart", 0) == 1, f"Cog with room should craft a heart, got {inv.get('heart', 0)}"
+        assert hub_inv.get("oxygen", 0) == 0, f"Hub oxygen should be spent on the craft, got {hub_inv.get('oxygen', 0)}"
+
+        harness.close()
+
+    def test_full_inventory_cog_does_not_waste_stock_withdrawal(self):
+        """A cog already carrying max hearts leaves a hub's pre-made heart stock untouched."""
+        station = self._heart_hub(heart_cost={"oxygen": 7}, heart_limit=2, hub_inventory={"heart": 1})
+
+        harness = StationTestHarness.create(
+            station=station,
+            agent_inventory={"heart": 2},
+            agent_team="cogs",
+            tags=["team:cogs"],
+            agent_limits={"heart": ResourceLimitsConfig(base=2, resources=["heart"])},
+        )
+
+        harness.move_onto_station()
+
+        inv = harness.agent_inventory()
+        hub_inv = harness.object_inventory("hub")
+
+        assert inv.get("heart", 0) == 2, f"Full cog should keep exactly 2 hearts, got {inv.get('heart', 0)}"
+        assert hub_inv.get("heart", 0) == 1, f"Hub's stock heart should be untouched, got {hub_inv.get('heart', 0)}"
 
         harness.close()
 
