@@ -15,8 +15,10 @@ from cogsguard.missions.terrain import find_machina_arena
 from mettagrid.config.filter import (
     GameValueFilter,
     HandlerTarget,
+    actorHas,
     actorHasAnyOf,
     hasTag,
+    isNot,
     sharedTagPrefix,
 )
 from mettagrid.config.game_value import QueryInventoryValue
@@ -105,13 +107,18 @@ class TeamHubVariant(CogsguardMissionVariant):
         return {k: -v for k, v in recipe.items()}
 
     @staticmethod
-    def _hub_heart_handlers(team: TeamConfig, heart_cost: dict[str, int]) -> list[Handler]:
-        """Heart crafting and distribution handlers for a team's hub."""
+    def _hub_heart_handlers(team: TeamConfig, heart_cost: dict[str, int], heart_limit: int) -> list[Handler]:
+        """Heart crafting and distribution handlers for a team's hub.
+
+        Both handlers require the actor has room for a heart first, so a full
+        cog's bump is a no-op instead of claiming hub resources it can't carry.
+        """
         hq = CvCHubConfig.hub_query(team)
+        has_room = isNot(actorHas({"heart": heart_limit}))
         return [
             Handler(
                 name="get_heart",
-                filters=[sharedTagPrefix("team:"), *CvCHubConfig.hub_has(team, {"heart": 1})],
+                filters=[sharedTagPrefix("team:"), has_room, *CvCHubConfig.hub_has(team, {"heart": 1})],
                 mutations=[
                     queryWithdraw(hq, {"heart": 1}),
                     logStatToGame(f"{team.name}/heart.withdrawn"),
@@ -119,7 +126,7 @@ class TeamHubVariant(CogsguardMissionVariant):
             ),
             Handler(
                 name="make_and_get_heart",
-                filters=[sharedTagPrefix("team:"), *CvCHubConfig.hub_has(team, heart_cost)],
+                filters=[sharedTagPrefix("team:"), has_room, *CvCHubConfig.hub_has(team, heart_cost)],
                 mutations=[
                     queryDelta(hq, TeamHubVariant._neg(heart_cost)),
                     updateActor({"heart": 1}),
@@ -160,5 +167,7 @@ class TeamHubVariant(CogsguardMissionVariant):
             cfg = hub.station_cfg()
             if heart is not None:
                 heart_cost = heart.cost or {}
-                cfg.on_use_handler = firstMatch([cfg.on_use_handler] + self._hub_heart_handlers(team, heart_cost))
+                cfg.on_use_handler = firstMatch(
+                    [cfg.on_use_handler] + self._hub_heart_handlers(team, heart_cost, heart.limit)
+                )
             env.game.objects.setdefault(map_name, cfg)

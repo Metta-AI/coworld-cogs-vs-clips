@@ -122,10 +122,13 @@ class StationTestHarness:
         materialize_queries: list[MaterializedQuery] | None = None,
         extra_resources: list[str] | None = None,
         territories: dict[str, TerritoryConfig] | None = None,
+        agent_limits: dict[str, ResourceLimitsConfig] | None = None,
     ) -> "StationTestHarness":
         """Create a 5x5 map with agent at (1,2) and station at (2,2).
 
-        Agent moves east to interact with station.
+        Agent moves east to interact with station. `agent_limits` overrides
+        entries in the default `resource_limits()` (e.g. to cap a specific
+        resource below the default 10000 "all" limit).
         """
         station_map_name = station.map_name or station.name
 
@@ -162,7 +165,7 @@ class StationTestHarness:
             tags=[f"team:{agent_team}"] if agent_team else [],
             inventory=InventoryConfig(
                 initial=agent_inventory or {},
-                limits=resource_limits(),
+                limits={**resource_limits(), **(agent_limits or {})},
             ),
         )
 
