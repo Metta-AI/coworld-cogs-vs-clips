@@ -99,6 +99,7 @@ class TeamJunctionVariant(CogsguardMissionVariant):
             align_filters: list = [
                 actorHasTag(t.team_tag()),
                 isNot(hasTag(t.team_tag())),
+                isNot(anyOf([hasTag(other.team_tag()) for other in all_teams if other is not t])),
                 actorHas({**self.align_required_resources, **self.align_cost}),
                 anyOf(
                     [
