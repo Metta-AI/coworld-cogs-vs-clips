@@ -68,8 +68,8 @@ At each simulator step the engine sends the raw MettaGrid token observation:
 Observation tokens are `[packed_location, feature_id, value]`. `packed_location == 254` is a global feature and
 `packed_location == 255` is padding. Spatial locations use `row = packed_location // 16` and
 `col = packed_location % 16` within the configured egocentric observation window.
-`visible_talk` contains only speech visible to this slot. For the `cogsguard` mission,
-`cogsguard.semantic.wire` validates these messages and reconstructs the game-owned semantic state.
+`visible_talk` contains only speech visible to this slot. `cogsguard.semantic.wire` validates these messages and
+reconstructs the game-owned semantic state for `cogsguard`, `machina_1`, and `four_score` missions.
 
 The player responds with an action index:
 

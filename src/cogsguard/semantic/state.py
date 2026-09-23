@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from cogsguard.semantic.base import SemanticStateAdapter
-from cogsguard.semantic.constants import COGSGUARD_ROLE_NAMES
+from dataclasses import dataclass
+
 from mettagrid.sdk.agent import (
     GridPosition,
     MettagridState,
@@ -10,12 +10,22 @@ from mettagrid.sdk.agent import (
     TeamMemberSummary,
     TeamSummary,
 )
-from mettagrid.sdk.agent.runtime.observation import ObservationCell, ObservationEnvelope, decode_observation
+from mettagrid.sdk.agent.runtime.observation import (
+    ObservationCell,
+    ObservationEnvelope,
+    decode_observation,
+)
+
+from cogsguard.semantic.base import SemanticStateAdapter
+from cogsguard.semantic.constants import COGSGUARD_ROLE_NAMES
 
 _LOCAL_STATUS_FEATURES = {"agent:frozen": "frozen"}
 
 
+@dataclass(slots=True)
 class CogsguardStateAdapter(SemanticStateAdapter):
+    game: str = "cogsguard"
+
     def build_state(self, observation: ObservationEnvelope) -> MettagridState:
         decoded = decode_observation(observation)
         self_cell = decoded.self_cell
@@ -79,7 +89,7 @@ class CogsguardStateAdapter(SemanticStateAdapter):
             shared_inventory=_shared_inventory_from_global_features(decoded.global_features),
         )
         return MettagridState(
-            game="cogsguard",
+            game=self.game,
             step=decoded.step,
             self_state=self_state,
             visible_entities=visible_entities,

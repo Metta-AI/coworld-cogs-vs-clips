@@ -10,13 +10,16 @@ from mettagrid.simulator import AgentObservation
 from mettagrid.simulator.interface import Location, ObservationToken, VisibleTalk
 from pydantic import BaseModel
 
+from cogsguard.semantic.state import CogsguardStateAdapter
 from cogsguard.semantic.surface import CogsguardSemanticSurface
+
+Mission = Literal["cogsguard", "machina_1", "four_score"]
 
 
 class PlayerConfig(BaseModel):
     type: Literal["player_config"]
     protocol: Literal["coworld.player.v1"]
-    mission: str
+    mission: Mission
     slot: int
     policy_env: PolicyEnvInterface
 
@@ -32,7 +35,7 @@ class WireVisibleTalk(BaseModel):
 class PlayerObservation(BaseModel):
     type: Literal["observation"]
     protocol: Literal["coworld.player.v1"]
-    mission: str
+    mission: Mission
     slot: int
     step: int
     observation: list[tuple[int, int, int]]
@@ -68,14 +71,12 @@ def decode_player_observation(
     return AgentObservation(agent_id=message.slot, tokens=tokens, talk=talk)
 
 
-def build_cogsguard_state(
+def build_player_state(
     config: PlayerConfig, message: PlayerObservation
 ) -> MettagridState:
-    if config.mission != "cogsguard":
-        raise ValueError(
-            f"Cogsguard semantic state is unavailable for mission {config.mission!r}"
-        )
-    return CogsguardSemanticSurface().build_state(
+    return CogsguardSemanticSurface(
+        state_adapter=CogsguardStateAdapter(game=config.mission)
+    ).build_state(
         decode_player_observation(config, message),
         policy_env_info=config.policy_env,
         step=message.step,
