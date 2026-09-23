@@ -11,7 +11,6 @@ from mettagrid.policy.policy import (
     StatefulPolicyImpl,
 )
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
-from mettagrid.mettagrid_c import PackedCoordinate
 from mettagrid.simulator import Action
 from mettagrid.simulator.interface import AgentObservation
 
@@ -30,7 +29,6 @@ MOVE_DELTAS = {
     "east": (0, 1),
 }
 Coordinate = tuple[int, int]
-PACKED_LOCATIONS = tuple(PackedCoordinate.unpack(value) for value in range(256))
 
 
 @dataclass
@@ -59,7 +57,6 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         ) % len(WANDER_DIRECTIONS)
 
         self._center = (policy_env_info.obs_height // 2, policy_env_info.obs_width // 2)
-        self._center_packed = PackedCoordinate.pack(*self._center)
         self._tag_name_to_id = {
             name: idx for idx, name in enumerate(policy_env_info.tags)
         }
@@ -218,13 +215,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             if feature_name == "last_action_move" and bool(token.value):
                 last_action_moved = True
             if feature_name == "tag":
-                location = PACKED_LOCATIONS[token.raw_token[0]]
+                location = token.location
                 if location is not None:
                     tags_by_location.setdefault(location, set()).add(token.value)
-            elif (
-                feature_name.startswith("inv:")
-                and token.raw_token[0] == self._center_packed
-            ):
+            elif feature_name.startswith("inv:") and token.location == self._center:
                 suffix = feature_name[4:]
                 if not suffix or token.value <= 0:
                     continue
