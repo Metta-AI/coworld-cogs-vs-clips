@@ -206,12 +206,29 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         self, obs: AgentObservation, state: StarterCogState
     ) -> tuple[Action, StarterCogState]:
         """Compute the action for this Cog."""
-        # Bucket visible tags by map cell so role logic and pathing can query them cheaply.
+        # Bucket visible tags and center inventory while reading each token once.
         tags_by_location: dict[tuple[int, int], set[int]] = {}
+        items: dict[str, int] = {}
+        last_action_moved = False
         for token in obs.tokens:
-            if token.feature.name != "tag" or token.location is None:
-                continue
-            tags_by_location.setdefault(token.location, set()).add(token.value)
+            feature_name = token.feature.name
+            if feature_name == "last_action_move" and bool(token.value):
+                last_action_moved = True
+            if feature_name == "tag":
+                location = token.location
+                if location is not None:
+                    tags_by_location.setdefault(location, set()).add(token.value)
+            elif feature_name.startswith("inv:") and token.location == self._center:
+                suffix = feature_name[4:]
+                if not suffix or token.value <= 0:
+                    continue
+                item_name, sep, power_str = suffix.rpartition(":p")
+                if sep and item_name and power_str.isdigit():
+                    scale = max(int(token.feature.normalization), 1) ** int(power_str)
+                else:
+                    item_name = suffix
+                    scale = 1
+                items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
         # Fold the previous move attempt into map memory, then remember the tags on every visible cell.
         if state.last_move_direction is not None:
@@ -224,10 +241,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                 state.position[0] + move_delta[0],
                 state.position[1] + move_delta[1],
             )
-            if any(
-                token.feature.name == "last_action_move" and bool(token.value)
-                for token in obs.tokens
-            ):
+            if last_action_moved:
                 state.position = attempted_position
                 state.visited.add(attempted_position)
             elif tags_by_location.get(attempted_location, set()) & self._wall_tags:
@@ -243,25 +257,6 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             state.seen_tags_by_position[absolute_location] = set(tag_ids)
             if location != self._center and tag_ids & self._wall_tags:
                 state.blocked.add(absolute_location)
-
-        # Parse center-cell inventory tokens into real item counts. Powered inventory features encode their scaling in
-        # the feature name, e.g. `inv:carbon:p1`.
-        items: dict[str, int] = {}
-        for token in obs.tokens:
-            if token.location != self._center or not token.feature.name.startswith(
-                "inv:"
-            ):
-                continue
-            suffix = token.feature.name[4:]
-            if not suffix or token.value <= 0:
-                continue
-            item_name, sep, power_str = suffix.rpartition(":p")
-            if sep and item_name and power_str.isdigit():
-                scale = max(int(token.feature.normalization), 1) ** int(power_str)
-            else:
-                item_name = suffix
-                scale = 1
-            items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
         own_team_tag_ids = (
             tags_by_location.get(self._center, set()) & self._team_tag_ids
