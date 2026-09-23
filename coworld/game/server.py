@@ -13,8 +13,6 @@ from urllib.parse import unquote, urlencode, urlparse
 
 import numpy as np
 import uvicorn
-from cogsguard.missions.four_score import FourScoreMission
-from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
 from coworld.runner.io import read_data, write_data
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, Response
@@ -26,6 +24,9 @@ from mettagrid.runner.live_episode import LiveMettaGridEpisode, TickMode
 from mettagrid.simulator.replay_log_writer import EpisodeReplay
 from mettagrid.util.grid_object_formatter import format_grid_object
 
+from cogsguard.missions.four_score import FourScoreMission
+from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
+
 CLIENT_DIR = Path(__file__).parent / "client"
 METTASCOPE_DIST_DIR = Path(
     os.environ.get("METTASCOPE_DIST_DIR", Path(__file__).parent / "mettascope")
@@ -35,6 +36,22 @@ START_GRACE_SECONDS = 30.0
 POLICY_ACTION_TIMEOUT_SECONDS = 0.1
 GAME_HOST = os.environ.get("COGAME_HOST", "0.0.0.0")
 GAME_PORT = int(os.environ.get("COGAME_PORT", "8080"))
+
+
+class CogsVsClipsEpisode(LiveMettaGridEpisode):
+    def observation_message(self, slot: int) -> dict[str, Any]:
+        message = super().observation_message(slot)
+        message["visible_talk"] = [
+            {
+                "agent_id": talk.agent_id,
+                "text": talk.text,
+                "row": talk.location.row,
+                "col": talk.location.col,
+                "remaining_steps": talk.remaining_steps,
+            }
+            for talk in self.sim.agent(slot).observation.talk
+        ]
+        return message
 
 
 def build_initial_replay(sim) -> tuple[dict[str, Any], list[str], dict[int, int]]:
@@ -144,7 +161,7 @@ class CogsVsClipsGame:
             max_steps=max_steps,
             seed=seed,
         )
-        self.episode = LiveMettaGridEpisode.from_env(
+        self.episode = CogsVsClipsEpisode.from_env(
             env,
             seed=seed,
             tokens=self.tokens,
