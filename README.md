@@ -90,3 +90,5 @@ as a JSONL subprocess. Other variants are `certification` and
 `four-score-daily`. Omit `--steps` for the full published 10,000-step horizon.
 The bridge accepts `reset`, `encode`, `teacher`, and `step` commands. `reset`
 must name 8 players for CogsGuard/Machina 1 or 32 for Four Score.
+Set Metta's `max_decisions` to at least `players * max_steps`; the published
+10,000-step horizons need 80,000 or 320,000 interactions, respectively.
