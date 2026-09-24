@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 
+from cogsguard.semantic.wire import PlayerConfig, PlayerObservation, build_player_state
+
 from server import CogsVsClipsGame
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -47,6 +49,12 @@ class TrainingSession:
         self.game = CogsVsClipsGame(
             config, Path("/tmp/cvc-training-results.json"), None, lambda: None
         )
+        self.player_configs = [
+            PlayerConfig.model_validate(
+                self.game.episode.player_config_message(slot, f"training-{slot}")
+            )
+            for slot in range(self.players)
+        ]
         self.decision_id = 0
         self.actions: list[str] = []
         self.inbox: list[dict[str, object]] = []
@@ -56,12 +64,12 @@ class TrainingSession:
         if self.game.sim.is_done():
             return {"kind": "terminal", "scores": dict(enumerate(self.game.scores()))}
         seat = len(self.actions)
-        wire = self.game.episode.observation_message(seat)
-        visible = {
-            "mission": self.config["mission"],
-            "step": self.game.sim.current_step,
-            **wire,
-        }
+        wire = PlayerObservation.model_validate(
+            self.game.episode.observation_message(seat)
+        )
+        visible = build_player_state(self.player_configs[seat], wire).model_dump(
+            mode="json"
+        )
         action_names = self.game.episode.action_names
         candidates = {
             name: {"decision": {"action_name": name}, "criterion": name}

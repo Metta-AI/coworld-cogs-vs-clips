@@ -78,9 +78,11 @@ seat-visible observation as the hosted game. It serves the Metta JSONL decision
 protocol for Metta RL, native PufferLib, and Metta post-training. Its numeric
 codec contains the acting seat, remaining horizon, and all 500 observation
 triples (1,502 values); its five choices match the player action names. The
-reference player supplies `noop` teacher decisions. Numeric training does not
-model the player talk channel; `visible_talk` remains available in the text
-observation and verified hosted trajectories.
+text decision uses the existing Cogsguard semantic decoder to keep prompts
+within the post-training token limit. The reference player supplies `noop`
+teacher decisions. Numeric training does not model the player talk channel;
+the semantic view retains visible talk, and verified hosted trajectories
+capture submitted speech.
 
 From a checkout with `cogsguard[coworld]` installed, run
 `python coworld/game/training_bridge.py --variant machina-1-daily --steps 32`

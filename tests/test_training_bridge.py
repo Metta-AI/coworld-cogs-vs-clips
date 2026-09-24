@@ -23,12 +23,17 @@ def test_complete_game_uses_published_seat_observations(
     for turn in range(2 * players):
         assert observation["kind"] == "decision"
         assert observation["seat"] == turn % players
-        assert (
-            observation["semantic_view"]["observation"]
-            == session.game.episode.observation_message(turn % players)["observation"]
-        )
+        assert observation["semantic_view"]["game"] == session.config["mission"]
+        assert observation["semantic_view"]["step"] == session.game.sim.current_step
         encoding = session.encode()
         assert len(encoding["values"]) == 1502
+        assert encoding["values"][2:] == [
+            value / 255
+            for token in session.game.episode.observation_message(turn % players)[
+                "observation"
+            ]
+            for value in token
+        ]
         assert encoding["actions"] == [
             {"action_name": action} for action in session.game.episode.action_names
         ]
