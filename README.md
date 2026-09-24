@@ -30,6 +30,14 @@ from cogsguard.core import get_game
 game = get_game("cogsguard")
 ```
 
+The game also provides a scripted MettaGrid teacher at
+`cogsguard.policy.starter.StarterPolicy`. It assigns miner and aligner roles
+by seat. `MinerRolePolicy`, `ScoutRolePolicy`, `AlignerRolePolicy`, and
+`ScramblerRolePolicy` in the same module fix one role for all assigned seats.
+Pass their full class paths in a MettaGrid `PolicySpec`. These policies use
+player-visible observations and keep independent state per agent. They do not
+switch roles during a game or establish a trained-policy quality baseline.
+
 ## Development
 
 ```bash
