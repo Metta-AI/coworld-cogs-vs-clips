@@ -44,3 +44,29 @@ coworld build --version 0.2.38
 coworld certify dist/coworld_manifest.json
 coworld upload-coworld dist/coworld_manifest.json
 ```
+
+## Typed semantic player
+
+Build the optional Jev-style player with
+`docker build -f Dockerfile.systemone-player -t cvc-systemone .`. It decodes
+the seat-visible numeric observation with the game-owned semantic adapter,
+offers the configured action names as typed candidates, and sends one action
+for every simulator step. Model requests run in the background; the player
+holds its last validated choice while a request is in flight.
+
+The hosted player uses `AWS_ENDPOINT_URL_BEDROCK_RUNTIME` and the platform's
+`/v1/systemone` sidecar route. For local TypeSafe trials, set
+`COGAME_SYSTEMONE_URL=https://api.typesafe.ai/v1/systemone`,
+`COGAME_SYSTEMONE_KEY`, and `COGAME_SYSTEMONE_MODEL=jev-latest`. Set
+`COGAME_SYSTEMONE_INTERVAL_STEPS` to control request spacing (default 24).
+Set `COGAME_DECISION_TRACE` to a new private path to journal each request,
+raw typed answer, semantic observation, and submitted action with mode `0600`.
+No provider key is written to that journal.
+
+After a completed match, join one seat's journal to the game replay and
+results with `python tools/export_semantic_trajectory.py --journal JOURNAL
+--replay REPLAY --results RESULTS --output COMPLETE --episode-id ID
+--source-revision COMMIT --policy-revision MODEL --seat SLOT` (on one line).
+The exporter retains both submitted and simulator-applied actions. A mismatch
+is retained as a fallback with no training label. Its `CompleteEpisode` output
+is private (`0600`) and can be imported with Metta's `export-hosted` command.

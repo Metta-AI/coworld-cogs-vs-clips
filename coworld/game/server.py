@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import gzip
+import hashlib
 import json
 import os
 import tempfile
@@ -319,6 +320,8 @@ class CogsVsClipsGame:
             "steps": self.sim.current_step,
             "mission": self.mission_name,
         }
+        if self.replay_path is not None:
+            results["replay_sha256"] = hashlib.sha256(self.replay_path.read_bytes()).hexdigest()
         if self.results_uri is not None:
             write_data(
                 self.results_uri,
