@@ -9,5 +9,5 @@ COPY src /tmp/cogsguard/src
 RUN pip install --no-cache-dir --no-deps /tmp/cogsguard && rm -rf /tmp/cogsguard
 
 WORKDIR /app
-COPY coworld/player/systemone_player.py /app/systemone_player.py
+COPY --chmod=0644 coworld/player/systemone_player.py /app/systemone_player.py
 CMD ["python", "/app/systemone_player.py"]
