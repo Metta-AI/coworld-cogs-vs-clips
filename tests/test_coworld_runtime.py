@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import zlib
@@ -13,6 +14,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from cogsguard.semantic.state import CogsguardStateAdapter
 from cogsguard.semantic.surface import CogsguardSemanticSurface
+from cogsguard.semantic.systemone import action_request
 from cogsguard.semantic.wire import (
     PlayerConfig,
     PlayerObservation,
@@ -85,6 +87,10 @@ def test_player_wire_reconstructs_seat_visible_semantic_state(
         assert state == CogsguardSemanticSurface(
             state_adapter=CogsguardStateAdapter(game=mission)
         ).build_state(actual, policy_env_info=game.episode.policy_env, step=step)
+        typed = action_request(state, game.episode.action_names, "typesafe/jev-1.13")
+        assert typed["state"]["game"] == mission
+        assert typed["state"]["step"] == step
+        assert set(typed["questions"]["action"]["criteria"]) == set(game.episode.action_names)
         game.sim.step()
 
 
@@ -389,6 +395,7 @@ def test_cogs_vs_clips_records_compact_mettascope_replay(
     replay = json.loads(replay_path.read_text(encoding="utf-8"))
     assert message["type"] == "step"
     assert results["steps"] == 1
+    assert results["replay_sha256"] == hashlib.sha256(replay_path.read_bytes()).hexdigest()
     assert replay["version"] == 4
     assert replay["max_steps"] == 1
     assert replay["num_agents"] == 2

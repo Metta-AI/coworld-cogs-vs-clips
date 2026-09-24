@@ -1,0 +1,13 @@
+ARG PLAYER_RUNTIME_PLATFORM=linux/amd64
+FROM --platform=${PLAYER_RUNTIME_PLATFORM} python:3.12-slim
+
+ARG METTAGRID_VERSION=0.26.21
+RUN pip install --no-cache-dir "mettagrid==${METTAGRID_VERSION}" websockets
+
+COPY pyproject.toml README.md /tmp/cogsguard/
+COPY src /tmp/cogsguard/src
+RUN pip install --no-cache-dir --no-deps /tmp/cogsguard && rm -rf /tmp/cogsguard
+
+WORKDIR /app
+COPY --chmod=0644 coworld/player/systemone_player.py /app/systemone_player.py
+CMD ["python", "/app/systemone_player.py"]
