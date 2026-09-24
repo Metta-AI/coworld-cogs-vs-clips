@@ -8,7 +8,16 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
+from mettagrid.simulator.interface import Location, VisibleTalk
 from starlette.websockets import WebSocketDisconnect
+
+from cogsguard.semantic.surface import CogsguardSemanticSurface
+from cogsguard.semantic.wire import (
+    PlayerConfig,
+    PlayerObservation,
+    build_cogsguard_state,
+    decode_player_observation,
+)
 
 
 def test_cogs_vs_clips_snapshot_exposes_admin_slot_state(tmp_path: Path) -> None:
@@ -29,6 +38,61 @@ def test_cogs_vs_clips_snapshot_exposes_admin_slot_state(tmp_path: Path) -> None
         "tick_mode": "fixed",
         "human_action_timeout_seconds": 5.0,
     }
+
+
+def test_player_wire_reconstructs_seat_visible_semantic_state(tmp_path: Path) -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+    game = server_module.CogsVsClipsGame(
+        {
+            "mission": "cogsguard",
+            "tokens": ["token-0", "token-1"],
+            "players": _players("Player 1", "Player 2"),
+            "max_steps": 3,
+            "seed": 0,
+            "step_seconds": 0.02,
+        },
+        results_path=tmp_path / "results.json",
+        replay_path=None,
+        request_shutdown=lambda: None,
+    )
+    config = PlayerConfig.model_validate(
+        game.episode.player_config_message(0, "player-0")
+    )
+
+    for step in range(2):
+        message = PlayerObservation.model_validate(game.episode.observation_message(0))
+        raw = decode_player_observation(config, message)
+        actual = game.sim.agent(0).observation
+        assert [(token.feature.name, token.raw_token) for token in raw.tokens] == [
+            (token.feature.name, tuple(int(value) for value in token.raw_token))
+            for token in actual.tokens
+        ]
+        assert raw.talk == actual.talk
+        assert build_cogsguard_state(
+            config, message
+        ) == CogsguardSemanticSurface().build_state(
+            actual, policy_env_info=game.episode.policy_env, step=step
+        )
+        game.sim.step()
+
+
+def test_player_wire_preserves_visible_speech(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    game = _new_game(tmp_path)
+    visible = [
+        VisibleTalk(
+            agent_id=0, text="hello", location=Location(6, 6), remaining_steps=2
+        )
+    ]
+    monkeypatch.setattr(game.sim, "_visible_talk", lambda _slot: visible)
+
+    message = PlayerObservation.model_validate(game.episode.observation_message(0))
+    config = PlayerConfig.model_validate(
+        game.episode.player_config_message(0, "player-0")
+    )
+
+    assert decode_player_observation(config, message).talk == visible
 
 
 def test_cogs_vs_clips_admin_snapshot_exposes_takeover_player_links(
