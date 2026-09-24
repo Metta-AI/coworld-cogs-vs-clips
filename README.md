@@ -70,3 +70,21 @@ results with `python tools/export_semantic_trajectory.py --journal JOURNAL
 The exporter retains both submitted and simulator-applied actions. A mismatch
 is retained as a fallback with no training label. Its `CompleteEpisode` output
 is private (`0600`) and can be imported with Metta's `export-hosted` command.
+
+## Local training bridge
+
+`coworld/game/training_bridge.py` runs the same seeded mission simulator and
+seat-visible observation as the hosted game. It serves the Metta JSONL decision
+protocol for Metta RL, native PufferLib, and Metta post-training. Its numeric
+codec contains the acting seat, remaining horizon, and all 500 observation
+triples (1,502 values); its five choices match the player action names. The
+reference player supplies `noop` teacher decisions. Numeric training does not
+model the player talk channel; `visible_talk` remains available in the text
+observation and verified hosted trajectories.
+
+From a checkout with `cogsguard[coworld]` installed, run
+`python coworld/game/training_bridge.py --variant machina-1-daily --steps 32`
+as a JSONL subprocess. Other variants are `certification` and
+`four-score-daily`. Omit `--steps` for the full published 10,000-step horizon.
+The bridge accepts `reset`, `encode`, `teacher`, and `step` commands. `reset`
+must name 8 players for CogsGuard/Machina 1 or 32 for Four Score.
