@@ -104,6 +104,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             self._tag_name_to_id[f"type:{element}_extractor"] for element in ELEMENTS
         }
         hub_tag_id = self._tag_name_to_id["type:hub"]
+        self._hub_tags = {hub_tag_id}
         self._junction_tags = {self._tag_name_to_id["type:junction"]}
         self._heart_source_tags = {hub_tag_id}
         if "type:chest" in self._tag_name_to_id:
@@ -165,7 +166,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                 direction_candidates.append("south" if delta_row > 0 else "north")
         return direction_candidates
 
-    def _route_to_remembered_junction(
+    def _route_to_remembered_target(
         self,
         target: Coordinate,
         tags_by_location: dict[Coordinate, set[int]],
@@ -333,6 +334,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         ) or self._team_tag_ids
         has_role_gear = items.get(self._role, 0) > 0
         has_heart = items.get("heart", 0) > 0
+        retreat_for_health = self._role == "aligner" and items.get("hp", 100) < 70
         cargo_amount = sum(items.get(element, 0) for element in ELEMENTS)
         role_station_tags = self._role_station_tags[self._role]
         own_anchor_positions = [
@@ -341,7 +343,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             if tag_ids & self._deposit_tags and tag_ids & own_team_tag_ids
         ]
         aligner_frontier_play = (
-            self._role == "aligner" and has_heart and bool(own_anchor_positions)
+            self._role == "aligner"
+            and has_heart
+            and bool(own_anchor_positions)
+            and not retreat_for_health
         )
 
         # Choose one target for the fixed role.
@@ -349,7 +354,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         target_tag_ids: set[int] | None = None
         require_tag_ids: set[int] | None = None
         exclude_tag_ids: set[int] | None = None
-        if self._role == "miner":
+        if retreat_for_health:
+            target_tag_ids = self._hub_tags
+            require_tag_ids = own_team_tag_ids
+        elif self._role == "miner":
             if cargo_amount > 0:
                 target_tag_ids = self._deposit_tags
                 require_tag_ids = own_team_tag_ids
@@ -483,61 +491,11 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         and current_distance > MAX_REMEMBERED_JUNCTION_DISTANCE
                     ):
                         return self._explore(tags_by_location, state)
-                    if target_tag_ids == self._junction_tags:
-                        direction = self._route_to_remembered_junction(
-                            remembered_target, tags_by_location, state
-                        )
-                        if direction is not None:
-                            return self._move(direction, state)
-                        return self._explore(tags_by_location, state)
-                    direction_candidates = self._toward_directions(delta_row, delta_col)
-                    direction_candidates.extend(
-                        direction
-                        for direction in WANDER_DIRECTIONS
-                        if direction not in direction_candidates
+                    direction = self._route_to_remembered_target(
+                        remembered_target, tags_by_location, state
                     )
-                    blocked_locations = set(tags_by_location)
-                    blocked_locations.discard(self._center)
-                    for prefer_reducing in (True, False):
-                        for prefer_unvisited in (True, False):
-                            # Try the greedy fresh-cell move first, then relax into sideways or revisiting moves if the
-                            # local frontier is crowded.
-                            for direction in direction_candidates:
-                                move_delta = MOVE_DELTAS[direction]
-                                next_location = (
-                                    self._center[0] + move_delta[0],
-                                    self._center[1] + move_delta[1],
-                                )
-                                next_position = (
-                                    state.position[0] + move_delta[0],
-                                    state.position[1] + move_delta[1],
-                                )
-                                if (
-                                    next_location in blocked_locations
-                                    or next_position in state.blocked
-                                ):
-                                    continue
-                                next_distance = abs(
-                                    remembered_target[0] - next_position[0]
-                                ) + abs(remembered_target[1] - next_position[1])
-                                if (
-                                    prefer_reducing
-                                    and next_distance >= current_distance
-                                ):
-                                    continue
-                                if (
-                                    not prefer_reducing
-                                    and next_distance < current_distance
-                                ):
-                                    continue
-                                if prefer_unvisited and next_position in state.visited:
-                                    continue
-                                if (
-                                    not prefer_unvisited
-                                    and next_position not in state.visited
-                                ):
-                                    continue
-                                return self._move(direction, state)
+                    if direction is not None:
+                        return self._move(direction, state)
             return self._explore(tags_by_location, state)
 
         # Step directly onto adjacent targets, otherwise route to an open neighbor cell.
