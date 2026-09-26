@@ -21,7 +21,8 @@ ELEMENTS = ("carbon", "oxygen", "germanium", "silicon")
 WANDER_DIRECTIONS = ("east", "south", "west", "north")
 TEAM_TAG_PREFIX = "team:"
 MAX_REMEMBERED_JUNCTION_DISTANCE = 24
-MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE = 25
+ALIGNER_HUB_RADIUS = 25
+ALIGNER_JUNCTION_RADIUS = 15
 MAX_ALIGNER_RETURN_TO_FRONTIER_DISTANCE = 20
 MOVE_DELTAS = {
     "north": (-1, 0),
@@ -41,7 +42,6 @@ class StarterCogState:
     visited: set[Coordinate] = field(default_factory=lambda: {(0, 0)})
     blocked: set[Coordinate] = field(default_factory=set)
     seen_tags_by_position: dict[Coordinate, set[int]] = field(default_factory=dict)
-    last_move_direction: str | None = None
 
 
 class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
@@ -152,10 +152,28 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
 
         return best_location
 
+    def _alignment_frontier_distance(
+        self,
+        target: Coordinate,
+        own_hubs: list[Coordinate],
+        own_junctions: list[Coordinate],
+    ) -> int | None:
+        best_distance: int | None = None
+        for anchors, radius in (
+            (own_hubs, ALIGNER_HUB_RADIUS),
+            (own_junctions, ALIGNER_JUNCTION_RADIUS),
+        ):
+            for anchor in anchors:
+                distance = (target[0] - anchor[0]) ** 2 + (target[1] - anchor[1]) ** 2
+                if distance <= radius**2 and (
+                    best_distance is None or distance < best_distance
+                ):
+                    best_distance = distance
+        return best_distance
+
     def _move(
         self, direction: str, state: StarterCogState
     ) -> tuple[Action, StarterCogState]:
-        state.last_move_direction = direction
         return Action(name=self._move_action_names[direction]), state
 
     def _toward_directions(self, delta_row: int, delta_col: int) -> list[str]:
@@ -286,10 +304,13 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         items: dict[str, int] = {}
         hub_stock = dict.fromkeys(ELEMENTS, 0)
         last_action_moved = False
+        last_action = 0
         for token in obs.tokens:
             feature_name = token.feature.name
             if feature_name == "last_action_move" and bool(token.value):
                 last_action_moved = True
+            if feature_name == "last_action" and token.is_global:
+                last_action = int(token.value)
             if token.is_global and feature_name.startswith("team:"):
                 suffix = feature_name[5:]
                 resource, sep, power_str = suffix.rpartition(":p")
@@ -316,24 +337,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                     scale = 1
                 items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
-        # Fold the previous move attempt into map memory, then remember the tags on every visible cell.
-        if state.last_move_direction is not None:
-            move_delta = MOVE_DELTAS[state.last_move_direction]
-            attempted_location = (
-                self._center[0] + move_delta[0],
-                self._center[1] + move_delta[1],
-            )
-            attempted_position = (
+        # The game reports the executed action. In mixed student/teacher rollouts, it can differ from the action this
+        # policy proposed, so map memory must follow the observation rather than the proposal.
+        if last_action_moved:
+            action_name = self._policy_env_info.action_names[last_action]
+            move_delta = MOVE_DELTAS[action_name.removeprefix("move_")]
+            state.position = (
                 state.position[0] + move_delta[0],
                 state.position[1] + move_delta[1],
             )
-            if last_action_moved:
-                state.position = attempted_position
-                state.visited.add(attempted_position)
-            elif tags_by_location.get(attempted_location, set()) & self._wall_tags:
-                # Only walls become permanent blockers. Another cog in the way is just traffic.
-                state.blocked.add(attempted_position)
-            state.last_move_direction = None
+            state.visited.add(state.position)
 
         for location, tag_ids in tags_by_location.items():
             absolute_location = (
@@ -372,8 +385,19 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             for position, tag_ids in state.seen_tags_by_position.items()
             if tag_ids & self._deposit_tags and tag_ids & own_team_tag_ids
         ]
+        own_hubs = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._hub_tags
+        ]
+        own_junctions = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._junction_tags
+        ]
         aligner_frontier_play = (
             self._role == "aligner"
+            and has_role_gear
             and has_heart
             and bool(own_anchor_positions)
             and not retreat_for_health
@@ -428,12 +452,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         state.position[0] + location[0] - self._center[0],
                         state.position[1] + location[1] - self._center[1],
                     )
-                    frontier_distance = min(
-                        abs(absolute_location[0] - anchor[0])
-                        + abs(absolute_location[1] - anchor[1])
-                        for anchor in own_anchor_positions
+                    frontier_distance = self._alignment_frontier_distance(
+                        absolute_location, own_hubs, own_junctions
                     )
-                    if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                    if frontier_distance is None:
                         continue
                     distance_to_agent = abs(location[0] - self._center[0]) + abs(
                         location[1] - self._center[1]
@@ -470,11 +492,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                             or position == state.position
                         ):
                             continue
-                        frontier_distance = min(
-                            abs(position[0] - anchor[0]) + abs(position[1] - anchor[1])
-                            for anchor in own_anchor_positions
+                        frontier_distance = self._alignment_frontier_distance(
+                            position, own_hubs, own_junctions
                         )
-                        if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                        if frontier_distance is None:
                             continue
                         distance_to_agent = abs(position[0] - state.position[0]) + abs(
                             position[1] - state.position[1]
