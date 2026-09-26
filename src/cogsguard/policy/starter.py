@@ -84,6 +84,12 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         assert not missing_tag_names, (
             f"Starter policy requires tags {sorted(missing_tag_names)}"
         )
+        missing_hub_features = {f"team:{element}" for element in ELEMENTS} - {
+            feature.name for feature in policy_env_info.obs_features
+        }
+        assert not missing_hub_features, (
+            f"Starter policy requires hub observations {sorted(missing_hub_features)}"
+        )
 
         self._noop_action_name = "noop"
         self._move_action_names = {
@@ -100,8 +106,9 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             role_name: {self._tag_name_to_id[f"type:{role_name}"]}
             for role_name in ALL_ROLES
         }
-        self._extractor_tags = {
-            self._tag_name_to_id[f"type:{element}_extractor"] for element in ELEMENTS
+        self._extractor_tags_by_element = {
+            element: {self._tag_name_to_id[f"type:{element}_extractor"]}
+            for element in ELEMENTS
         }
         hub_tag_id = self._tag_name_to_id["type:hub"]
         self._hub_tags = {hub_tag_id}
@@ -277,11 +284,22 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         # Bucket visible tags and center inventory while reading each token once.
         tags_by_location: dict[tuple[int, int], set[int]] = {}
         items: dict[str, int] = {}
+        hub_stock = dict.fromkeys(ELEMENTS, 0)
         last_action_moved = False
         for token in obs.tokens:
             feature_name = token.feature.name
             if feature_name == "last_action_move" and bool(token.value):
                 last_action_moved = True
+            if token.is_global and feature_name.startswith("team:"):
+                suffix = feature_name[5:]
+                resource, sep, power_str = suffix.rpartition(":p")
+                if sep and resource and power_str.isdigit():
+                    scale = max(int(token.feature.normalization), 1) ** int(power_str)
+                else:
+                    resource = suffix
+                    scale = 1
+                if resource in hub_stock:
+                    hub_stock[resource] += int(token.value) * scale
             if feature_name == "tag":
                 location = token.location
                 if location is not None:
@@ -334,6 +352,18 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         ) or self._team_tag_ids
         has_role_gear = items.get(self._role, 0) > 0
         has_heart = items.get("heart", 0) > 0
+        refill_at_hub = (
+            self._role in {"aligner", "scrambler"}
+            and items.get("heart", 0) < 3
+            and min(hub_stock.values()) >= 7
+            and any(
+                abs(location[0] - self._center[0]) + abs(location[1] - self._center[1])
+                == 1
+                and tag_ids & self._hub_tags
+                and tag_ids & own_team_tag_ids
+                for location, tag_ids in tags_by_location.items()
+            )
+        )
         retreat_for_health = self._role == "aligner" and items.get("hp", 100) < 70
         cargo_amount = sum(items.get(element, 0) for element in ELEMENTS)
         role_station_tags = self._role_station_tags[self._role]
@@ -347,6 +377,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             and has_heart
             and bool(own_anchor_positions)
             and not retreat_for_health
+            and not refill_at_hub
         )
 
         # Choose one target for the fixed role.
@@ -365,14 +396,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                 target_tag_ids = role_station_tags
                 require_tag_ids = own_team_tag_ids
             else:
-                target_tag_ids = self._extractor_tags
+                target_tag_ids = self._extractor_tags_by_element[
+                    min(ELEMENTS, key=hub_stock.__getitem__)
+                ]
         elif not has_role_gear:
             target_tag_ids = role_station_tags
             require_tag_ids = own_team_tag_ids
         elif self._role in {"aligner", "scrambler"}:
             target_tag_ids = self._heart_source_tags
             require_tag_ids = own_team_tag_ids
-            if has_heart:
+            if has_heart and not refill_at_hub:
                 target_tag_ids = self._junction_tags
                 if self._role == "aligner":
                     exclude_tag_ids = self._team_tag_ids
