@@ -374,6 +374,7 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         ]
         aligner_frontier_play = (
             self._role == "aligner"
+            and has_role_gear
             and has_heart
             and bool(own_anchor_positions)
             and not retreat_for_health

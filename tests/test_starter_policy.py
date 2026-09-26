@@ -156,3 +156,42 @@ def test_fixed_role_teachers_load_from_policy_specs(name: str) -> None:
         agent = policy.agent_policy(0)
         agent.reset(sim)
         assert agent.step(sim.agent(0).observation).name in info.action_names
+
+
+@pytest.mark.parametrize("remembered", [False, True])
+def test_aligner_with_heart_gets_gear_before_frontier(remembered: bool) -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="aligner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:heart", 1),
+        (center, "inv:hp", 100),
+        (center - 16, "tag", info.tags.index("type:hub")),
+        (center - 16, "tag", info.tags.index("team:cogs")),
+    ]
+    state = policy.initial_agent_state()
+    station_tags = {info.tags.index("type:aligner"), info.tags.index("team:cogs")}
+    if remembered:
+        state.seen_tags_by_position[(0, -8)] = station_tags
+    else:
+        values.extend((center - 1, "tag", tag) for tag in sorted(station_tags))
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, state)
+
+    assert action.name == "move_west"
