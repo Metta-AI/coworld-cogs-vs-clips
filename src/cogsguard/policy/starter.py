@@ -41,7 +41,6 @@ class StarterCogState:
     visited: set[Coordinate] = field(default_factory=lambda: {(0, 0)})
     blocked: set[Coordinate] = field(default_factory=set)
     seen_tags_by_position: dict[Coordinate, set[int]] = field(default_factory=dict)
-    last_move_direction: str | None = None
 
 
 class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
@@ -155,7 +154,6 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
     def _move(
         self, direction: str, state: StarterCogState
     ) -> tuple[Action, StarterCogState]:
-        state.last_move_direction = direction
         return Action(name=self._move_action_names[direction]), state
 
     def _toward_directions(self, delta_row: int, delta_col: int) -> list[str]:
@@ -286,10 +284,13 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         items: dict[str, int] = {}
         hub_stock = dict.fromkeys(ELEMENTS, 0)
         last_action_moved = False
+        last_action = 0
         for token in obs.tokens:
             feature_name = token.feature.name
             if feature_name == "last_action_move" and bool(token.value):
                 last_action_moved = True
+            if feature_name == "last_action" and token.is_global:
+                last_action = int(token.value)
             if token.is_global and feature_name.startswith("team:"):
                 suffix = feature_name[5:]
                 resource, sep, power_str = suffix.rpartition(":p")
@@ -316,24 +317,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                     scale = 1
                 items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
-        # Fold the previous move attempt into map memory, then remember the tags on every visible cell.
-        if state.last_move_direction is not None:
-            move_delta = MOVE_DELTAS[state.last_move_direction]
-            attempted_location = (
-                self._center[0] + move_delta[0],
-                self._center[1] + move_delta[1],
-            )
-            attempted_position = (
+        # The game reports the executed action. In mixed student/teacher rollouts, it can differ from the action this
+        # policy proposed, so map memory must follow the observation rather than the proposal.
+        if last_action_moved:
+            action_name = self._policy_env_info.action_names[last_action]
+            move_delta = MOVE_DELTAS[action_name.removeprefix("move_")]
+            state.position = (
                 state.position[0] + move_delta[0],
                 state.position[1] + move_delta[1],
             )
-            if last_action_moved:
-                state.position = attempted_position
-                state.visited.add(attempted_position)
-            elif tags_by_location.get(attempted_location, set()) & self._wall_tags:
-                # Only walls become permanent blockers. Another cog in the way is just traffic.
-                state.blocked.add(attempted_position)
-            state.last_move_direction = None
+            state.visited.add(state.position)
 
         for location, tag_ids in tags_by_location.items():
             absolute_location = (

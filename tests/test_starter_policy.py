@@ -6,6 +6,7 @@ import pytest
 
 from cogsguard.missions.machina_1 import make_machina1_mission
 from cogsguard.policy.starter import (
+    AlignerRolePolicy,
     MOVE_DELTAS,
     StarterCogPolicyImpl,
     StarterCogState,
@@ -195,3 +196,32 @@ def test_aligner_with_heart_gets_gear_before_frontier(remembered: bool) -> None:
     action, _ = policy.step_with_state(observation, state)
 
     assert action.name == "move_west"
+
+
+def test_starter_map_tracks_executed_student_move() -> None:
+    config = make_machina1_mission(num_agents=8).make_env()
+    info = PolicyEnvInterface.from_mg_cfg(config)
+    for seed in range(20):
+        for direction in MOVE_DELTAS:
+            with closing(Simulation(config, seed=seed)) as sim:
+                teacher = AlignerRolePolicy(info).agent_policy(0)
+                teacher.reset(sim)
+                start = sim._agent_locations()[0]
+                proposed = teacher.step(sim.agent(0).observation).name
+                if proposed == f"move_{direction}" or not proposed.startswith("move_"):
+                    continue
+                for seat in range(info.num_agents):
+                    sim.agent(seat).set_action(
+                        f"move_{direction}" if seat == 0 else "noop"
+                    )
+                sim.step()
+                end = sim._agent_locations()[0]
+                actual_delta = (end.row - start.row, end.col - start.col)
+                if actual_delta == (0, 0):
+                    continue
+                teacher.step(sim.agent(0).observation)
+                assert teacher._state.position == actual_delta
+                return
+    raise AssertionError(
+        "No successful student move differed from the teacher's proposal"
+    )
