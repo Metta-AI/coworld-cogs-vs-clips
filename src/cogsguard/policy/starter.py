@@ -21,7 +21,8 @@ ELEMENTS = ("carbon", "oxygen", "germanium", "silicon")
 WANDER_DIRECTIONS = ("east", "south", "west", "north")
 TEAM_TAG_PREFIX = "team:"
 MAX_REMEMBERED_JUNCTION_DISTANCE = 24
-MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE = 25
+ALIGNER_HUB_RADIUS = 25
+ALIGNER_JUNCTION_RADIUS = 15
 MAX_ALIGNER_RETURN_TO_FRONTIER_DISTANCE = 20
 MOVE_DELTAS = {
     "north": (-1, 0),
@@ -150,6 +151,25 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                 best_key = distance_key
 
         return best_location
+
+    def _alignment_frontier_distance(
+        self,
+        target: Coordinate,
+        own_hubs: list[Coordinate],
+        own_junctions: list[Coordinate],
+    ) -> int | None:
+        best_distance: int | None = None
+        for anchors, radius in (
+            (own_hubs, ALIGNER_HUB_RADIUS),
+            (own_junctions, ALIGNER_JUNCTION_RADIUS),
+        ):
+            for anchor in anchors:
+                distance = (target[0] - anchor[0]) ** 2 + (target[1] - anchor[1]) ** 2
+                if distance <= radius**2 and (
+                    best_distance is None or distance < best_distance
+                ):
+                    best_distance = distance
+        return best_distance
 
     def _move(
         self, direction: str, state: StarterCogState
@@ -365,6 +385,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             for position, tag_ids in state.seen_tags_by_position.items()
             if tag_ids & self._deposit_tags and tag_ids & own_team_tag_ids
         ]
+        own_hubs = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._hub_tags
+        ]
+        own_junctions = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._junction_tags
+        ]
         aligner_frontier_play = (
             self._role == "aligner"
             and has_role_gear
@@ -422,12 +452,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         state.position[0] + location[0] - self._center[0],
                         state.position[1] + location[1] - self._center[1],
                     )
-                    frontier_distance = min(
-                        abs(absolute_location[0] - anchor[0])
-                        + abs(absolute_location[1] - anchor[1])
-                        for anchor in own_anchor_positions
+                    frontier_distance = self._alignment_frontier_distance(
+                        absolute_location, own_hubs, own_junctions
                     )
-                    if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                    if frontier_distance is None:
                         continue
                     distance_to_agent = abs(location[0] - self._center[0]) + abs(
                         location[1] - self._center[1]
@@ -464,11 +492,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                             or position == state.position
                         ):
                             continue
-                        frontier_distance = min(
-                            abs(position[0] - anchor[0]) + abs(position[1] - anchor[1])
-                            for anchor in own_anchor_positions
+                        frontier_distance = self._alignment_frontier_distance(
+                            position, own_hubs, own_junctions
                         )
-                        if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                        if frontier_distance is None:
                             continue
                         distance_to_agent = abs(position[0] - state.position[0]) + abs(
                             position[1] - state.position[1]

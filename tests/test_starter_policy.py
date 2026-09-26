@@ -225,3 +225,47 @@ def test_starter_map_tracks_executed_student_move() -> None:
     raise AssertionError(
         "No successful student move differed from the teacher's proposal"
     )
+
+
+@pytest.mark.parametrize("remembered", [False, True])
+def test_aligner_prefers_junction_inside_actual_network_radius(
+    remembered: bool,
+) -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="aligner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    junction = info.tags.index("type:junction")
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:aligner", 1),
+        (center, "inv:heart", 1),
+        (center, "inv:hp", 100),
+    ]
+    state = policy.initial_agent_state()
+    own_team = info.tags.index("team:cogs")
+    state.seen_tags_by_position[(0, -25)] = {info.tags.index("type:hub"), own_team}
+    state.seen_tags_by_position[(0, 18)] = {junction, own_team}
+    if remembered:
+        state.seen_tags_by_position[(0, -1)] = {junction}
+        state.seen_tags_by_position[(0, 1)] = {junction}
+    else:
+        values.extend([(center - 1, "tag", junction), (center + 1, "tag", junction)])
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, state)
+
+    assert action.name == "move_west"
