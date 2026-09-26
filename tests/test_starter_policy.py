@@ -43,7 +43,7 @@ def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
         assert sim._c_sim.get_game_stat("cogs/aligned.junction.held") > 0
 
 
-def test_remembered_junction_route_goes_around_a_wall() -> None:
+def test_remembered_target_route_goes_around_a_wall() -> None:
     policy = object.__new__(StarterCogPolicyImpl)
     policy._center = (6, 6)
     state = StarterCogState(explore_direction_index=0)
@@ -54,7 +54,7 @@ def test_remembered_junction_route_goes_around_a_wall() -> None:
     }
 
     for _ in range(7):
-        direction = policy._route_to_remembered_junction(target, {}, state)
+        direction = policy._route_to_remembered_target(target, {}, state)
         assert direction is not None
         delta = MOVE_DELTAS[direction]
         state.position = (state.position[0] + delta[0], state.position[1] + delta[1])
