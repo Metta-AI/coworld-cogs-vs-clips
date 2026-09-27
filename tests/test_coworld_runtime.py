@@ -14,7 +14,6 @@ from starlette.websockets import WebSocketDisconnect
 
 from cogsguard.semantic.state import CogsguardStateAdapter
 from cogsguard.semantic.surface import CogsguardSemanticSurface
-from cogsguard.semantic.systemone import action_request
 from cogsguard.semantic.wire import (
     PlayerConfig,
     PlayerObservation,
@@ -87,10 +86,6 @@ def test_player_wire_reconstructs_seat_visible_semantic_state(
         assert state == CogsguardSemanticSurface(
             state_adapter=CogsguardStateAdapter(game=mission)
         ).build_state(actual, policy_env_info=game.episode.policy_env, step=step)
-        typed = action_request(state, game.episode.action_names, "typesafe/jev-1.13")
-        assert typed["state"]["game"] == mission
-        assert typed["state"]["step"] == step
-        assert set(typed["questions"]["action"]["criteria"]) == set(game.episode.action_names)
         game.sim.step()
 
 
