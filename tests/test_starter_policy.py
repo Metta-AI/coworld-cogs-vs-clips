@@ -1,15 +1,17 @@
 """The game-owned scripted teacher must run against current CogsGuard observations."""
 
 from contextlib import closing
+from dataclasses import replace
 
 import pytest
-
 from cogsguard.missions.machina_1 import make_machina1_mission
-from cogsguard.policy.starter import StarterPolicy
+from cogsguard.policy.starter import StarterCogPolicyImpl, StarterPolicy
+
 from mettagrid.policy.loader import initialize_or_load_policy
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.policy.policy_spec import PolicySpec
 from mettagrid.simulator import Simulation
+from mettagrid.simulator.interface import AgentObservation
 
 
 def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
@@ -52,3 +54,23 @@ def test_fixed_role_teachers_load_from_policy_specs(name: str) -> None:
         agent = policy.agent_policy(0)
         agent.reset(sim)
         assert agent.step(sim.agent(0).observation).name in info.action_names
+
+
+@pytest.mark.parametrize("moved", [False, True])
+def test_teacher_memory_follows_executed_student_move(moved: bool) -> None:
+    config = make_machina1_mission(num_agents=8).make_env()
+    info = PolicyEnvInterface.from_mg_cfg(config)
+    teacher = StarterCogPolicyImpl(info, 0)
+    state = teacher.initial_agent_state()
+    with closing(Simulation(config, seed=73)) as sim:
+        observation = sim.agent(0).observation
+        teacher.step_with_state(observation, state)
+        executed = info.action_names.index("move_north")
+        tokens = []
+        for token in observation.tokens:
+            if token.feature.name in {"last_action", "last_action_move"}:
+                value = executed if token.feature.name == "last_action" else int(moved)
+                token = replace(token, value=value, raw_token=(*token.raw_token[:2], value))
+            tokens.append(token)
+        teacher.step_with_state(AgentObservation(agent_id=0, tokens=tokens), state)
+        assert state.position == ((-1, 0) if moved else (0, 0))
