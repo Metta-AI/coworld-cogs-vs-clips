@@ -204,17 +204,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         self, obs: AgentObservation, state: StarterCogState
     ) -> tuple[Action, StarterCogState]:
         """Compute the action for this Cog."""
-        last_action = next(
-            token.value for token in obs.tokens if token.feature.name == "last_action"
-        )
         # Bucket visible tags and center inventory.
         tags_by_location: dict[tuple[int, int], set[int]] = {}
         items: dict[str, int] = {}
-        last_action_moved = False
+        position = [0, 0]
         for token in obs.tokens:
             feature_name = token.feature.name
-            if feature_name == "last_action_move" and bool(token.value):
-                last_action_moved = True
+            if feature_name.startswith("lp:"):
+                delta = MOVE_DELTAS[feature_name.removeprefix("lp:")]
+                position[0] += delta[0] * token.value
+                position[1] += delta[1] * token.value
             if feature_name == "tag":
                 location = token.location
                 if location is not None:
@@ -231,15 +230,9 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                     scale = 1
                 items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
-        # A teacher's recommendation can differ from the student's executed action.
-        if last_action_moved:
-            direction = self._policy_env_info.action_names[last_action].removeprefix("move_")
-            move_delta = MOVE_DELTAS[direction]
-            state.position = (
-                state.position[0] + move_delta[0],
-                state.position[1] + move_delta[1],
-            )
-            state.visited.add(state.position)
+        # A simultaneous vibe can replace last_action; public offsets preserve position.
+        state.position = (position[0], position[1])
+        state.visited.add(state.position)
 
         for location, tag_ids in tags_by_location.items():
             absolute_location = (
