@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from heapq import heappop, heappush
 
 from mettagrid.policy.policy import (
     MultiAgentPolicy,
@@ -163,6 +164,72 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             if delta_row != 0:
                 direction_candidates.append("south" if delta_row > 0 else "north")
         return direction_candidates
+
+    def _route_to_remembered_junction(
+        self,
+        target: Coordinate,
+        tags_by_location: dict[Coordinate, set[int]],
+        state: StarterCogState,
+    ) -> str | None:
+        """Find a path around observed obstacles instead of stepping back and forth."""
+        start = state.position
+        occupied = {
+            (
+                start[0] + location[0] - self._center[0],
+                start[1] + location[1] - self._center[1],
+            )
+            for location in tags_by_location
+            if location != self._center
+        }
+        blocked = state.blocked | occupied
+        blocked.discard(target)
+        known = (*state.seen_tags_by_position, start, target)
+        row_min = min(position[0] for position in known) - 2
+        row_max = max(position[0] for position in known) + 2
+        col_min = min(position[1] for position in known) - 2
+        col_max = max(position[1] for position in known) + 2
+        frontier = [(abs(target[0] - start[0]) + abs(target[1] - start[1]), 0, start)]
+        best_cost = {start: 0}
+        first_direction: dict[Coordinate, str] = {}
+        while frontier:
+            _, cost, position = heappop(frontier)
+            if cost != best_cost[position]:
+                continue
+            if position == target:
+                return first_direction[position]
+            directions = self._toward_directions(
+                target[0] - position[0], target[1] - position[1]
+            )
+            directions.extend(
+                direction
+                for direction in WANDER_DIRECTIONS
+                if direction not in directions
+            )
+            for direction in directions:
+                delta = MOVE_DELTAS[direction]
+                next_position = (position[0] + delta[0], position[1] + delta[1])
+                next_cost = cost + 1
+                if (
+                    not (
+                        row_min <= next_position[0] <= row_max
+                        and col_min <= next_position[1] <= col_max
+                    )
+                    or next_position in blocked
+                    or (
+                        next_position in best_cost
+                        and next_cost >= best_cost[next_position]
+                    )
+                ):
+                    continue
+                best_cost[next_position] = next_cost
+                first_direction[next_position] = (
+                    direction if position == start else first_direction[position]
+                )
+                heuristic = abs(target[0] - next_position[0]) + abs(
+                    target[1] - next_position[1]
+                )
+                heappush(frontier, (next_cost + heuristic, next_cost, next_position))
+        return None
 
     def _explore(
         self,
@@ -415,6 +482,13 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         target_tag_ids == self._junction_tags
                         and current_distance > MAX_REMEMBERED_JUNCTION_DISTANCE
                     ):
+                        return self._explore(tags_by_location, state)
+                    if target_tag_ids == self._junction_tags:
+                        direction = self._route_to_remembered_junction(
+                            remembered_target, tags_by_location, state
+                        )
+                        if direction is not None:
+                            return self._move(direction, state)
                         return self._explore(tags_by_location, state)
                     direction_candidates = self._toward_directions(delta_row, delta_col)
                     direction_candidates.extend(

@@ -5,7 +5,12 @@ from contextlib import closing
 import pytest
 
 from cogsguard.missions.machina_1 import make_machina1_mission
-from cogsguard.policy.starter import StarterPolicy
+from cogsguard.policy.starter import (
+    MOVE_DELTAS,
+    StarterCogPolicyImpl,
+    StarterCogState,
+    StarterPolicy,
+)
 from mettagrid.policy.loader import initialize_or_load_policy
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.policy.policy_spec import PolicySpec
@@ -36,6 +41,27 @@ def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
                 break
         assert movements > 128
         assert sim._c_sim.get_game_stat("cogs/aligned.junction.held") > 0
+
+
+def test_remembered_junction_route_goes_around_a_wall() -> None:
+    policy = object.__new__(StarterCogPolicyImpl)
+    policy._center = (6, 6)
+    state = StarterCogState(explore_direction_index=0)
+    state.blocked = {(0, 1), (0, 2), (1, 1), (1, 2)}
+    target = (0, 3)
+    state.seen_tags_by_position = {
+        position: set() for position in (*state.blocked, state.position, target)
+    }
+
+    for _ in range(7):
+        direction = policy._route_to_remembered_junction(target, {}, state)
+        assert direction is not None
+        delta = MOVE_DELTAS[direction]
+        state.position = (state.position[0] + delta[0], state.position[1] + delta[1])
+        if state.position == target:
+            break
+
+    assert state.position == target
 
 
 @pytest.mark.parametrize(
