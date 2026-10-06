@@ -7,9 +7,8 @@ Do not implicitly merge or rebase feature work or dirty checkouts. Keep existing
 repository instructions and ownership boundaries in force.
 
 This diagnostic policy applies only to this repository's first-party adapter,
-game and QA tooling. It does not authorize changes to vendor/third-party code,
-Metta, Fabric, Fabric Research (including evidence/checkouts), Polyworld or their
-vendored copies. It is guidance only, not a change to runtime output defaults.
+game and QA tooling. It does not authorize changes to vendor/third-party code
+or other repositories. It is guidance only, not a change to runtime output defaults.
 
 ## Disposable QA Storage
 
@@ -43,7 +42,7 @@ vendored copies. It is guidance only, not a change to runtime output defaults.
 - Honor replay-expansion output paths and `COGAME_RESULTS_URI` /
   `COGAME_SAVE_REPLAY_URI`; transport staging is not a replacement for those
   destinations. Policy checkpoints, training/evaluation trajectories and retained
-  replay datasets are research data. Do not change Metta/MettaGrid dependencies
+  replay datasets are research data. Do not change upstream dependencies
   or their storage policies as part of adapter QA.
 
 ## Protected Coding-Agent Archives
