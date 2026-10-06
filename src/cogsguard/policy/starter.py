@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from heapq import heappop, heappush
 
 from mettagrid.policy.policy import (
     MultiAgentPolicy,
@@ -20,7 +21,8 @@ ELEMENTS = ("carbon", "oxygen", "germanium", "silicon")
 WANDER_DIRECTIONS = ("east", "south", "west", "north")
 TEAM_TAG_PREFIX = "team:"
 MAX_REMEMBERED_JUNCTION_DISTANCE = 24
-MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE = 25
+ALIGNER_HUB_RADIUS = 25
+ALIGNER_JUNCTION_RADIUS = 15
 MAX_ALIGNER_RETURN_TO_FRONTIER_DISTANCE = 20
 MOVE_DELTAS = {
     "north": (-1, 0),
@@ -40,7 +42,6 @@ class StarterCogState:
     visited: set[Coordinate] = field(default_factory=lambda: {(0, 0)})
     blocked: set[Coordinate] = field(default_factory=set)
     seen_tags_by_position: dict[Coordinate, set[int]] = field(default_factory=dict)
-    last_move_direction: str | None = None
 
 
 class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
@@ -83,6 +84,12 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         assert not missing_tag_names, (
             f"Starter policy requires tags {sorted(missing_tag_names)}"
         )
+        missing_hub_features = {f"team:{element}" for element in ELEMENTS} - {
+            feature.name for feature in policy_env_info.obs_features
+        }
+        assert not missing_hub_features, (
+            f"Starter policy requires hub observations {sorted(missing_hub_features)}"
+        )
 
         self._noop_action_name = "noop"
         self._move_action_names = {
@@ -99,10 +106,12 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             role_name: {self._tag_name_to_id[f"type:{role_name}"]}
             for role_name in ALL_ROLES
         }
-        self._extractor_tags = {
-            self._tag_name_to_id[f"type:{element}_extractor"] for element in ELEMENTS
+        self._extractor_tags_by_element = {
+            element: {self._tag_name_to_id[f"type:{element}_extractor"]}
+            for element in ELEMENTS
         }
         hub_tag_id = self._tag_name_to_id["type:hub"]
+        self._hub_tags = {hub_tag_id}
         self._junction_tags = {self._tag_name_to_id["type:junction"]}
         self._heart_source_tags = {hub_tag_id}
         if "type:chest" in self._tag_name_to_id:
@@ -143,10 +152,28 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
 
         return best_location
 
+    def _alignment_frontier_distance(
+        self,
+        target: Coordinate,
+        own_hubs: list[Coordinate],
+        own_junctions: list[Coordinate],
+    ) -> int | None:
+        best_distance: int | None = None
+        for anchors, radius in (
+            (own_hubs, ALIGNER_HUB_RADIUS),
+            (own_junctions, ALIGNER_JUNCTION_RADIUS),
+        ):
+            for anchor in anchors:
+                distance = (target[0] - anchor[0]) ** 2 + (target[1] - anchor[1]) ** 2
+                if distance <= radius**2 and (
+                    best_distance is None or distance < best_distance
+                ):
+                    best_distance = distance
+        return best_distance
+
     def _move(
         self, direction: str, state: StarterCogState
     ) -> tuple[Action, StarterCogState]:
-        state.last_move_direction = direction
         return Action(name=self._move_action_names[direction]), state
 
     def _toward_directions(self, delta_row: int, delta_col: int) -> list[str]:
@@ -163,6 +190,72 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             if delta_row != 0:
                 direction_candidates.append("south" if delta_row > 0 else "north")
         return direction_candidates
+
+    def _route_to_remembered_target(
+        self,
+        target: Coordinate,
+        tags_by_location: dict[Coordinate, set[int]],
+        state: StarterCogState,
+    ) -> str | None:
+        """Find a path around observed obstacles instead of stepping back and forth."""
+        start = state.position
+        occupied = {
+            (
+                start[0] + location[0] - self._center[0],
+                start[1] + location[1] - self._center[1],
+            )
+            for location in tags_by_location
+            if location != self._center
+        }
+        blocked = state.blocked | occupied
+        blocked.discard(target)
+        known = (*state.seen_tags_by_position, start, target)
+        row_min = min(position[0] for position in known) - 2
+        row_max = max(position[0] for position in known) + 2
+        col_min = min(position[1] for position in known) - 2
+        col_max = max(position[1] for position in known) + 2
+        frontier = [(abs(target[0] - start[0]) + abs(target[1] - start[1]), 0, start)]
+        best_cost = {start: 0}
+        first_direction: dict[Coordinate, str] = {}
+        while frontier:
+            _, cost, position = heappop(frontier)
+            if cost != best_cost[position]:
+                continue
+            if position == target:
+                return first_direction[position]
+            directions = self._toward_directions(
+                target[0] - position[0], target[1] - position[1]
+            )
+            directions.extend(
+                direction
+                for direction in WANDER_DIRECTIONS
+                if direction not in directions
+            )
+            for direction in directions:
+                delta = MOVE_DELTAS[direction]
+                next_position = (position[0] + delta[0], position[1] + delta[1])
+                next_cost = cost + 1
+                if (
+                    not (
+                        row_min <= next_position[0] <= row_max
+                        and col_min <= next_position[1] <= col_max
+                    )
+                    or next_position in blocked
+                    or (
+                        next_position in best_cost
+                        and next_cost >= best_cost[next_position]
+                    )
+                ):
+                    continue
+                best_cost[next_position] = next_cost
+                first_direction[next_position] = (
+                    direction if position == start else first_direction[position]
+                )
+                heuristic = abs(target[0] - next_position[0]) + abs(
+                    target[1] - next_position[1]
+                )
+                heappush(frontier, (next_cost + heuristic, next_cost, next_position))
+        return None
 
     def _explore(
         self,
@@ -209,11 +302,25 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         # Bucket visible tags and center inventory while reading each token once.
         tags_by_location: dict[tuple[int, int], set[int]] = {}
         items: dict[str, int] = {}
+        hub_stock = dict.fromkeys(ELEMENTS, 0)
         last_action_moved = False
+        last_action = 0
         for token in obs.tokens:
             feature_name = token.feature.name
             if feature_name == "last_action_move" and bool(token.value):
                 last_action_moved = True
+            if feature_name == "last_action" and token.is_global:
+                last_action = int(token.value)
+            if token.is_global and feature_name.startswith("team:"):
+                suffix = feature_name[5:]
+                resource, sep, power_str = suffix.rpartition(":p")
+                if sep and resource and power_str.isdigit():
+                    scale = max(int(token.feature.normalization), 1) ** int(power_str)
+                else:
+                    resource = suffix
+                    scale = 1
+                if resource in hub_stock:
+                    hub_stock[resource] += int(token.value) * scale
             if feature_name == "tag":
                 location = token.location
                 if location is not None:
@@ -230,24 +337,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                     scale = 1
                 items[item_name] = items.get(item_name, 0) + int(token.value) * scale
 
-        # Fold the previous move attempt into map memory, then remember the tags on every visible cell.
-        if state.last_move_direction is not None:
-            move_delta = MOVE_DELTAS[state.last_move_direction]
-            attempted_location = (
-                self._center[0] + move_delta[0],
-                self._center[1] + move_delta[1],
-            )
-            attempted_position = (
+        # The game reports the executed action. In mixed student/teacher rollouts, it can differ from the action this
+        # policy proposed, so map memory must follow the observation rather than the proposal.
+        if last_action_moved:
+            action_name = self._policy_env_info.action_names[last_action]
+            move_delta = MOVE_DELTAS[action_name.removeprefix("move_")]
+            state.position = (
                 state.position[0] + move_delta[0],
                 state.position[1] + move_delta[1],
             )
-            if last_action_moved:
-                state.position = attempted_position
-                state.visited.add(attempted_position)
-            elif tags_by_location.get(attempted_location, set()) & self._wall_tags:
-                # Only walls become permanent blockers. Another cog in the way is just traffic.
-                state.blocked.add(attempted_position)
-            state.last_move_direction = None
+            state.visited.add(state.position)
 
         for location, tag_ids in tags_by_location.items():
             absolute_location = (
@@ -266,6 +365,19 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         ) or self._team_tag_ids
         has_role_gear = items.get(self._role, 0) > 0
         has_heart = items.get("heart", 0) > 0
+        refill_at_hub = (
+            self._role in {"aligner", "scrambler"}
+            and items.get("heart", 0) < 3
+            and min(hub_stock.values()) >= 7
+            and any(
+                abs(location[0] - self._center[0]) + abs(location[1] - self._center[1])
+                == 1
+                and tag_ids & self._hub_tags
+                and tag_ids & own_team_tag_ids
+                for location, tag_ids in tags_by_location.items()
+            )
+        )
+        retreat_for_health = self._role == "aligner" and items.get("hp", 100) < 70
         cargo_amount = sum(items.get(element, 0) for element in ELEMENTS)
         role_station_tags = self._role_station_tags[self._role]
         own_anchor_positions = [
@@ -273,8 +385,23 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
             for position, tag_ids in state.seen_tags_by_position.items()
             if tag_ids & self._deposit_tags and tag_ids & own_team_tag_ids
         ]
+        own_hubs = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._hub_tags
+        ]
+        own_junctions = [
+            position
+            for position in own_anchor_positions
+            if state.seen_tags_by_position[position] & self._junction_tags
+        ]
         aligner_frontier_play = (
-            self._role == "aligner" and has_heart and bool(own_anchor_positions)
+            self._role == "aligner"
+            and has_role_gear
+            and has_heart
+            and bool(own_anchor_positions)
+            and not retreat_for_health
+            and not refill_at_hub
         )
 
         # Choose one target for the fixed role.
@@ -282,7 +409,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
         target_tag_ids: set[int] | None = None
         require_tag_ids: set[int] | None = None
         exclude_tag_ids: set[int] | None = None
-        if self._role == "miner":
+        if retreat_for_health:
+            target_tag_ids = self._hub_tags
+            require_tag_ids = own_team_tag_ids
+        elif self._role == "miner":
             if cargo_amount > 0:
                 target_tag_ids = self._deposit_tags
                 require_tag_ids = own_team_tag_ids
@@ -290,14 +420,16 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                 target_tag_ids = role_station_tags
                 require_tag_ids = own_team_tag_ids
             else:
-                target_tag_ids = self._extractor_tags
+                target_tag_ids = self._extractor_tags_by_element[
+                    min(ELEMENTS, key=hub_stock.__getitem__)
+                ]
         elif not has_role_gear:
             target_tag_ids = role_station_tags
             require_tag_ids = own_team_tag_ids
         elif self._role in {"aligner", "scrambler"}:
             target_tag_ids = self._heart_source_tags
             require_tag_ids = own_team_tag_ids
-            if has_heart:
+            if has_heart and not refill_at_hub:
                 target_tag_ids = self._junction_tags
                 if self._role == "aligner":
                     exclude_tag_ids = self._team_tag_ids
@@ -320,12 +452,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         state.position[0] + location[0] - self._center[0],
                         state.position[1] + location[1] - self._center[1],
                     )
-                    frontier_distance = min(
-                        abs(absolute_location[0] - anchor[0])
-                        + abs(absolute_location[1] - anchor[1])
-                        for anchor in own_anchor_positions
+                    frontier_distance = self._alignment_frontier_distance(
+                        absolute_location, own_hubs, own_junctions
                     )
-                    if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                    if frontier_distance is None:
                         continue
                     distance_to_agent = abs(location[0] - self._center[0]) + abs(
                         location[1] - self._center[1]
@@ -362,11 +492,10 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                             or position == state.position
                         ):
                             continue
-                        frontier_distance = min(
-                            abs(position[0] - anchor[0]) + abs(position[1] - anchor[1])
-                            for anchor in own_anchor_positions
+                        frontier_distance = self._alignment_frontier_distance(
+                            position, own_hubs, own_junctions
                         )
-                        if frontier_distance > MAX_ALIGNER_JUNCTION_FRONTIER_DISTANCE:
+                        if frontier_distance is None:
                             continue
                         distance_to_agent = abs(position[0] - state.position[0]) + abs(
                             position[1] - state.position[1]
@@ -416,54 +545,11 @@ class StarterCogPolicyImpl(StatefulPolicyImpl[StarterCogState]):
                         and current_distance > MAX_REMEMBERED_JUNCTION_DISTANCE
                     ):
                         return self._explore(tags_by_location, state)
-                    direction_candidates = self._toward_directions(delta_row, delta_col)
-                    direction_candidates.extend(
-                        direction
-                        for direction in WANDER_DIRECTIONS
-                        if direction not in direction_candidates
+                    direction = self._route_to_remembered_target(
+                        remembered_target, tags_by_location, state
                     )
-                    blocked_locations = set(tags_by_location)
-                    blocked_locations.discard(self._center)
-                    for prefer_reducing in (True, False):
-                        for prefer_unvisited in (True, False):
-                            # Try the greedy fresh-cell move first, then relax into sideways or revisiting moves if the
-                            # local frontier is crowded.
-                            for direction in direction_candidates:
-                                move_delta = MOVE_DELTAS[direction]
-                                next_location = (
-                                    self._center[0] + move_delta[0],
-                                    self._center[1] + move_delta[1],
-                                )
-                                next_position = (
-                                    state.position[0] + move_delta[0],
-                                    state.position[1] + move_delta[1],
-                                )
-                                if (
-                                    next_location in blocked_locations
-                                    or next_position in state.blocked
-                                ):
-                                    continue
-                                next_distance = abs(
-                                    remembered_target[0] - next_position[0]
-                                ) + abs(remembered_target[1] - next_position[1])
-                                if (
-                                    prefer_reducing
-                                    and next_distance >= current_distance
-                                ):
-                                    continue
-                                if (
-                                    not prefer_reducing
-                                    and next_distance < current_distance
-                                ):
-                                    continue
-                                if prefer_unvisited and next_position in state.visited:
-                                    continue
-                                if (
-                                    not prefer_unvisited
-                                    and next_position not in state.visited
-                                ):
-                                    continue
-                                return self._move(direction, state)
+                    if direction is not None:
+                        return self._move(direction, state)
             return self._explore(tags_by_location, state)
 
         # Step directly onto adjacent targets, otherwise route to an open neighbor cell.

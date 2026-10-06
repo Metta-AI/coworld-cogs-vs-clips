@@ -5,11 +5,18 @@ from contextlib import closing
 import pytest
 
 from cogsguard.missions.machina_1 import make_machina1_mission
-from cogsguard.policy.starter import StarterPolicy
+from cogsguard.policy.starter import (
+    AlignerRolePolicy,
+    MOVE_DELTAS,
+    StarterCogPolicyImpl,
+    StarterCogState,
+    StarterPolicy,
+)
 from mettagrid.policy.loader import initialize_or_load_policy
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.policy.policy_spec import PolicySpec
 from mettagrid.simulator import Simulation
+from mettagrid.simulator.interface import AgentObservation, ObservationToken
 
 
 def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
@@ -38,6 +45,104 @@ def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
         assert sim._c_sim.get_game_stat("cogs/aligned.junction.held") > 0
 
 
+def test_remembered_target_route_goes_around_a_wall() -> None:
+    policy = object.__new__(StarterCogPolicyImpl)
+    policy._center = (6, 6)
+    state = StarterCogState(explore_direction_index=0)
+    state.blocked = {(0, 1), (0, 2), (1, 1), (1, 2)}
+    target = (0, 3)
+    state.seen_tags_by_position = {
+        position: set() for position in (*state.blocked, state.position, target)
+    }
+
+    for _ in range(7):
+        direction = policy._route_to_remembered_target(target, {}, state)
+        assert direction is not None
+        delta = MOVE_DELTAS[direction]
+        state.position = (state.position[0] + delta[0], state.position[1] + delta[1])
+        if state.position == target:
+            break
+
+    assert state.position == target
+
+
+def test_miner_targets_lowest_full_hub_stock() -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="miner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:miner", 1),
+        (center - 1, "tag", info.tags.index("type:carbon_extractor")),
+        (center + 1, "tag", info.tags.index("type:oxygen_extractor")),
+        (254, "team:carbon", 1),
+        (254, "team:carbon:p1", 1),
+        (254, "team:oxygen", 2),
+        (254, "team:germanium", 3),
+        (254, "team:silicon", 4),
+    ]
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, policy.initial_agent_state())
+
+    assert action.name == "move_east"
+
+
+@pytest.mark.parametrize("stock,expected_action", [(7, "move_west"), (0, "move_east")])
+def test_aligner_refills_only_when_hub_can_craft(
+    stock: int, expected_action: str
+) -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="aligner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:aligner", 1),
+        (center, "inv:heart", 2),
+        (center, "inv:hp", 100),
+        (center - 1, "tag", info.tags.index("type:hub")),
+        (center - 1, "tag", info.tags.index("team:cogs")),
+        (center + 1, "tag", info.tags.index("type:junction")),
+        *(
+            (254, f"team:{element}", stock)
+            for element in ("carbon", "oxygen", "germanium", "silicon")
+        ),
+    ]
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, policy.initial_agent_state())
+
+    assert action.name == expected_action
+
+
 @pytest.mark.parametrize(
     "name",
     ["MinerRolePolicy", "ScoutRolePolicy", "AlignerRolePolicy", "ScramblerRolePolicy"],
@@ -52,3 +157,115 @@ def test_fixed_role_teachers_load_from_policy_specs(name: str) -> None:
         agent = policy.agent_policy(0)
         agent.reset(sim)
         assert agent.step(sim.agent(0).observation).name in info.action_names
+
+
+@pytest.mark.parametrize("remembered", [False, True])
+def test_aligner_with_heart_gets_gear_before_frontier(remembered: bool) -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="aligner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:heart", 1),
+        (center, "inv:hp", 100),
+        (center - 16, "tag", info.tags.index("type:hub")),
+        (center - 16, "tag", info.tags.index("team:cogs")),
+    ]
+    state = policy.initial_agent_state()
+    station_tags = {info.tags.index("type:aligner"), info.tags.index("team:cogs")}
+    if remembered:
+        state.seen_tags_by_position[(0, -8)] = station_tags
+    else:
+        values.extend((center - 1, "tag", tag) for tag in sorted(station_tags))
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, state)
+
+    assert action.name == "move_west"
+
+
+def test_starter_map_tracks_executed_student_move() -> None:
+    config = make_machina1_mission(num_agents=8).make_env()
+    info = PolicyEnvInterface.from_mg_cfg(config)
+    for seed in range(20):
+        for direction in MOVE_DELTAS:
+            with closing(Simulation(config, seed=seed)) as sim:
+                teacher = AlignerRolePolicy(info).agent_policy(0)
+                teacher.reset(sim)
+                start = sim._agent_locations()[0]
+                proposed = teacher.step(sim.agent(0).observation).name
+                if proposed == f"move_{direction}" or not proposed.startswith("move_"):
+                    continue
+                for seat in range(info.num_agents):
+                    sim.agent(seat).set_action(
+                        f"move_{direction}" if seat == 0 else "noop"
+                    )
+                sim.step()
+                end = sim._agent_locations()[0]
+                actual_delta = (end.row - start.row, end.col - start.col)
+                if actual_delta == (0, 0):
+                    continue
+                teacher.step(sim.agent(0).observation)
+                assert teacher._state.position == actual_delta
+                return
+    raise AssertionError(
+        "No successful student move differed from the teacher's proposal"
+    )
+
+
+@pytest.mark.parametrize("remembered", [False, True])
+def test_aligner_prefers_junction_inside_actual_network_radius(
+    remembered: bool,
+) -> None:
+    info = PolicyEnvInterface.from_mg_cfg(
+        make_machina1_mission(num_agents=8).make_env()
+    )
+    policy = StarterCogPolicyImpl(info, agent_id=0, role="aligner")
+    features = {feature.name: feature for feature in info.obs_features}
+    center = (info.obs_height // 2) * 16 + info.obs_width // 2
+    junction = info.tags.index("type:junction")
+    values = [
+        (center, "tag", info.tags.index("type:agent")),
+        (center, "tag", info.tags.index("team:cogs")),
+        (center, "inv:aligner", 1),
+        (center, "inv:heart", 1),
+        (center, "inv:hp", 100),
+    ]
+    state = policy.initial_agent_state()
+    own_team = info.tags.index("team:cogs")
+    state.seen_tags_by_position[(0, -25)] = {info.tags.index("type:hub"), own_team}
+    state.seen_tags_by_position[(0, 18)] = {junction, own_team}
+    if remembered:
+        state.seen_tags_by_position[(0, -1)] = {junction}
+        state.seen_tags_by_position[(0, 1)] = {junction}
+    else:
+        values.extend([(center - 1, "tag", junction), (center + 1, "tag", junction)])
+    observation = AgentObservation(
+        agent_id=0,
+        tokens=[
+            ObservationToken(
+                feature=features[name],
+                value=value,
+                raw_token=(location, features[name].id, value),
+            )
+            for location, name, value in values
+        ],
+    )
+
+    action, _ = policy.step_with_state(observation, state)
+
+    assert action.name == "move_west"
