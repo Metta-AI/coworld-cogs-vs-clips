@@ -9,6 +9,15 @@ name: Deploy CogsGuard Coworld
 on:
   push:
     branches: [main]
+    paths:
+      - '**'
+      - '!coworld/player/**'
+      - '!src/cogsguard/semantic/systemone.py'
+      - '!tools/export_semantic_trajectory.py'
+      - '!tests/**'
+      - '!README.md'
+      - '!Dockerfile.systemone-player'
+      - '!.github/workflows/deploy-game.yml'
   workflow_dispatch:
 
 concurrency:
