@@ -22,7 +22,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-docker build \
+docker build --load \
   --platform linux/amd64 \
   --file "${repo_dir}/Dockerfile.game" \
   --target replay-viewer-bundle \
