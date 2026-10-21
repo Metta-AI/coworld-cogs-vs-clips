@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 from heapq import heappop, heappush
+from typing import ClassVar
 
 from mettagrid.policy.policy import (
     MultiAgentPolicy,
@@ -633,24 +634,24 @@ class BaseStarterPolicy(MultiAgentPolicy):
 
 
 class StarterPolicy(BaseStarterPolicy):
-    short_names = ["cogsguard_starter"]
+    short_names: ClassVar[list[str]] = ["cogsguard_starter"]
 
 
 class MinerRolePolicy(BaseStarterPolicy):
-    short_names = ["cogsguard_miner"]
+    short_names: ClassVar[list[str]] = ["cogsguard_miner"]
     _role = "miner"
 
 
 class ScoutRolePolicy(BaseStarterPolicy):
-    short_names = ["cogsguard_scout"]
+    short_names: ClassVar[list[str]] = ["cogsguard_scout"]
     _role = "scout"
 
 
 class AlignerRolePolicy(BaseStarterPolicy):
-    short_names = ["cogsguard_aligner"]
+    short_names: ClassVar[list[str]] = ["cogsguard_aligner"]
     _role = "aligner"
 
 
 class ScramblerRolePolicy(BaseStarterPolicy):
-    short_names = ["cogsguard_scrambler"]
+    short_names: ClassVar[list[str]] = ["cogsguard_scrambler"]
     _role = "scrambler"

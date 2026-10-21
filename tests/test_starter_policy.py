@@ -3,20 +3,20 @@
 from contextlib import closing
 
 import pytest
-
-from cogsguard.missions.machina_1 import make_machina1_mission
-from cogsguard.policy.starter import (
-    AlignerRolePolicy,
-    MOVE_DELTAS,
-    StarterCogPolicyImpl,
-    StarterCogState,
-    StarterPolicy,
-)
 from mettagrid.policy.loader import initialize_or_load_policy
 from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.policy.policy_spec import PolicySpec
 from mettagrid.simulator import Simulation
 from mettagrid.simulator.interface import AgentObservation, ObservationToken
+
+from cogsguard.missions.machina_1 import make_machina1_mission
+from cogsguard.policy.starter import (
+    MOVE_DELTAS,
+    AlignerRolePolicy,
+    StarterCogPolicyImpl,
+    StarterCogState,
+    StarterPolicy,
+)
 
 
 def test_starter_teacher_moves_and_aligns_current_machina_game() -> None:
