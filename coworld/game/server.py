@@ -20,12 +20,14 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from mettagrid.config.mettagrid_config import MettaGridConfig
 from mettagrid.map_builder.map_builder import HasSeed
+from mettagrid.policy.policy_env_interface import PolicyEnvInterface
 from mettagrid.renderer.common import METTASCOPE_REPLAY_URL_PREFIX
 from mettagrid.runner.live_episode import LiveMettaGridEpisode, TickMode
+from mettagrid.simulator import Simulation, Simulator
 from mettagrid.simulator.replay_log_writer import EpisodeReplay
 from mettagrid.util.grid_object_formatter import format_grid_object
 
-from cogsguard.missions.four_score import FourScoreMission
+from cogsguard.missions.four_score import FourScoreMission, four_score_event_handlers
 from cogsguard.missions.machina_1 import make_cogsguard_mission, make_machina1_mission
 
 CLIENT_DIR = Path(__file__).parent / "client"
@@ -162,9 +164,10 @@ class CogsVsClipsGame:
             max_steps=max_steps,
             seed=seed,
         )
-        self.episode = CogsVsClipsEpisode.from_env(
-            env,
-            seed=seed,
+        sim = make_simulation(self.mission_name, env, seed=seed)
+        self.episode = CogsVsClipsEpisode(
+            sim,
+            PolicyEnvInterface.from_mg_cfg(sim.config),
             tokens=self.tokens,
             max_steps=max_steps,
             step_seconds=config["step_seconds"],
@@ -374,6 +377,16 @@ def make_env(
         raise TypeError(f"{mission_name} map builder must support seeding")
     map_builder.seed = seed
     return env
+
+
+def make_simulation(
+    mission_name: str, env: MettaGridConfig, *, seed: int
+) -> Simulation:
+    simulator = Simulator()
+    if mission_name == "four_score":
+        for handler in four_score_event_handlers(seed):
+            simulator.add_event_handler(handler)
+    return simulator.new_simulation(env, seed=seed)
 
 
 def noop_shutdown() -> None:
