@@ -32,31 +32,31 @@ jobs:
       matrix:
         include:
           - name: cogs-vs-clips-commissioner
-            image: metta-ai/coworld-cogs-vs-clips-commissioner
+            image: softmax-universe/coworld-cogs-vs-clips-commissioner
             context: ./commissioner
             file: ./commissioner/commissioners/Dockerfile
             build_args: |
               COMMISSIONER_KEY=config_driven
               RULESET_STRATEGY_CONFIG_NAME=cogs_vs_clips
           - name: four-score-commissioner
-            image: metta-ai/coworld-four-score-commissioner
+            image: softmax-universe/coworld-four-score-commissioner
             context: ./commissioner
             file: ./commissioner/commissioners/Dockerfile
             build_args: |
               COMMISSIONER_KEY=config_driven
               RULESET_STRATEGY_CONFIG_NAME=four_score
           - name: default-reporter
-            image: metta-ai/coworld-cogs-vs-clips-default-reporter
+            image: softmax-universe/coworld-cogs-vs-clips-default-reporter
             context: ./reporter
             file: ./reporter/default/Dockerfile
             build_args: ""
           - name: cogs-vs-clips-reporter
-            image: metta-ai/coworld-cogs-vs-clips-reporter
+            image: softmax-universe/coworld-cogs-vs-clips-reporter
             context: ./reporter
             file: ./reporter/cogs_vs_clips/cogs_vs_clips_summarizer/Dockerfile
             build_args: ""
           - name: grader
-            image: metta-ai/coworld-cogs-vs-clips-grader
+            image: softmax-universe/coworld-cogs-vs-clips-grader
             context: ./grader/graders/cogs_v_clips/cogs_v_clips_grader
             file: ./grader/graders/cogs_v_clips/cogs_v_clips_grader/Dockerfile
             build_args: ""

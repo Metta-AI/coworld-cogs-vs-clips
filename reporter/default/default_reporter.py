@@ -60,7 +60,7 @@ from reporter_sdk import (
 # Stamped into the output zip's ``manifest.json::reporter_id`` and the
 # value Coworld manifests should use when referencing this image. Keeps
 # the ``softmax/`` prefix from the master plan even though the image
-# itself is published under ``metta-ai/`` on GHCR — the reporter_id and
+# itself is published under ``softmax-universe/`` on GHCR — the reporter_id and
 # the image tag are independent identifiers.
 REPORTER_ID = "softmax/default-reporter"
 REPORT_REQUEST_ENV_VAR = "COGAME_REPORT_REQUEST"
@@ -154,7 +154,7 @@ def _render_summary_md(
         "Coworlds that have not yet shipped a game-specific reporter. "
         "To produce a richer report, point the Coworld's "
         "`manifest.reporter[]` at a game-specific image (see the "
-        "`Metta-AI/reporters` repository for examples)._"
+        "`softmax-universe/reporters` repository for examples)._"
     )
     return "\n".join(lines) + "\n"
 

@@ -64,7 +64,7 @@ The smoke harness (`./smoke.sh`) builds a synthetic three-slot bundle via `smoke
 
 ```bash
 ./build.sh                                # builds default-reporter:latest for linux/amd64
-IMAGE=ghcr.io/metta-ai/reporters-default:dev ./build.sh
+IMAGE=ghcr.io/softmax-universe/reporters-default:dev ./build.sh
 PLATFORM=linux/arm64 ./build.sh           # local-only platform override
 ```
 
@@ -82,14 +82,14 @@ Covers the happy path, missing `results` token, missing `scores` field, empty sc
 
 ```bash
 ./smoke.sh                  # builds + runs the image against a synthetic bundle
-IMAGE=ghcr.io/metta-ai/reporters-default:dev ./smoke.sh
+IMAGE=ghcr.io/softmax-universe/reporters-default:dev ./smoke.sh
 ```
 
 Builds the image, hand-builds a synthetic bundle zip with three slots via `smoke/make_bundle.py`, runs the container, and asserts the output zip's `manifest.json` declares `reporter_id == "softmax/default-reporter"`, `render` points at an existing `summary.md`, no `event_log`, and `summary.md` is non-empty and names the reporter.
 
 ## Image name and reporter id
 
-- The image is published as `ghcr.io/metta-ai/reporters-default:latest` (GHCR namespace, following the established `metta-ai/coworld-runner` convention).
+- The image is published as `ghcr.io/softmax-universe/reporters-default:latest` (GHCR namespace, following the established `softmax-universe/coworld-runner` convention).
 - The in-zip `manifest.json::reporter_id` is `softmax/default-reporter` (the canonical id Coworld manifests reference, per the master plan).
 
 These two identifiers are independent: the image registry path is how the platform pulls the container; the `reporter_id` is how downstream consumers identify the reporter in cached artifacts. Changing one does not require changing the other.
@@ -102,7 +102,7 @@ A Coworld whose `reporter[]` is otherwise empty can satisfy `min_length=1` by ad
 {
   "type": "reporter",
   "id": "softmax/default-reporter",
-  "image": "ghcr.io/metta-ai/reporters-default:latest"
+  "image": "ghcr.io/softmax-universe/reporters-default:latest"
 }
 ```
 

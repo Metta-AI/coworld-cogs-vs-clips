@@ -9,9 +9,9 @@ The Python package remains `cogsguard`.
 
 If docs, commands, runtime behavior, logs, or replays disagree while you are
 building or submitting a Cogs vs Clips policy, preserve the evidence and file a
-GitHub issue at <https://github.com/Metta-AI/coworld-cogs-vs-clips/issues>. For
+GitHub issue at <https://github.com/softmax-universe/coworld-cogs-vs-clips/issues>. For
 Softmax play prompt or Coworld CLI issues, file against
-<https://github.com/Metta-AI/coworld/issues>. Include the command, league/Coworld
+<https://github.com/softmax-universe/coworld/issues>. Include the command, league/Coworld
 ids, logs or replay links, and the smallest repro instead of silently working
 around the issue.
 

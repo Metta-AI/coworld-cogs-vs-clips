@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/Metta-AI/coworld/main/src/coworld/coworld_manifest_schema.json",
+  "$schema": "https://raw.githubusercontent.com/softmax-universe/coworld/main/src/coworld/coworld_manifest_schema.json",
   "tags": [
     "multi-agent",
     "resource-management",
@@ -19,7 +19,7 @@
         "python",
         "/app/server.py"
       ],
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+      "source_url": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main"
     },
     "config_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -159,17 +159,17 @@
     "protocols": {
       "player": {
         "type": "uri",
-        "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/blob/main/coworld/game/docs/player_protocol_spec.md"
+        "value": "https://github.com/softmax-universe/coworld-cogs-vs-clips/blob/main/coworld/game/docs/player_protocol_spec.md"
       },
       "global": {
         "type": "uri",
-        "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/blob/main/coworld/game/docs/global_protocol_spec.md"
+        "value": "https://github.com/softmax-universe/coworld-cogs-vs-clips/blob/main/coworld/game/docs/global_protocol_spec.md"
       }
     },
     "docs": {
       "readme": {
         "type": "uri",
-        "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/blob/main/README.md"
+        "value": "https://github.com/softmax-universe/coworld-cogs-vs-clips/blob/main/README.md"
       },
       "pages": [
         {
@@ -193,7 +193,7 @@
           "title": "game source",
           "content": {
             "type": "uri",
-            "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+            "value": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main"
           }
         },
         {
@@ -201,7 +201,7 @@
           "title": "player.md",
           "content": {
             "type": "uri",
-            "value": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player"
+            "value": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main/coworld/player"
           }
         }
       ]
@@ -217,7 +217,7 @@
         "python",
         "/app/coworld_reference_player.py"
       ],
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player",
+      "source_url": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main/coworld/player",
       "description": "CogsGuard Coworld reference player for Cogs vs Clips and Four Score over coworld.player.v1."
     }
   ],
@@ -228,7 +228,7 @@
       "name": "Cogs vs Clips Commissioner",
       "description": "Cogs vs Clips commissioner with slot-balanced competition rounds and isolated qualifier rounds.",
       "image": "{{COGS_VS_CLIPS_COMMISSIONER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
+      "source_url": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     },
     {
       "id": "four-score-commissioner",
@@ -236,7 +236,7 @@
       "name": "Four Score Commissioner",
       "description": "Four Score commissioner with four-team competition rounds and isolated qualifier rounds.",
       "image": "{{FOUR_SCORE_COMMISSIONER_IMAGE}}",
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
+      "source_url": "https://github.com/softmax-universe/coworld-cogs-vs-clips/tree/main/commissioner/commissioners/ruleset_strategy_commissioner"
     }
   ],
   "reporter": [],
