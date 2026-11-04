@@ -2,10 +2,10 @@
 
 Commissioner implementations for **coworlds** - containers and tooling that orchestrate tournament rounds, schedule episodes, carry round state, and return scoring or graduation decisions to the platform.
 
-> **Status:** shared commissioner source inside `Metta-AI/coworld-tools`. The old `Metta-AI/commissioners` repo is
+> **Status:** shared commissioner source inside `softmax-universe/coworld-tools`. The old `softmax-universe/commissioners` repo is
 > archived. Edit this tree for reusable commissioner code/config. If you are fixing the commissioner for exactly one
 > Coworld, start from the closest template, Paint Arena example, or implementation here, copy it beside the game in
-> `Metta-AI/coworld-<slug>/commissioner/`, and point the manifest there.
+> `softmax-universe/coworld-<slug>/commissioner/`, and point the manifest there.
 >
 > The config-driven commissioner is the active runnable container with `/healthz` and `/round` endpoints. The coworld
 > `commissioner` role already has a protocol in metta; see [`docs/COMMISSIONER_DESIGN.md`](docs/COMMISSIONER_DESIGN.md)
@@ -55,7 +55,7 @@ Leaf runnable directories keep thin entrypoints and build scripts:
 | Commissioner | Coworld | Status |
 | --- | --- | --- |
 | `templates/commissioner_template` | (template) | Scaffold only - no implementation |
-| `ruleset_strategy_commissioner` with `default.yaml` | Any | Active default runnable commissioner published as `ghcr.io/metta-ai/commissioners-default` |
+| `ruleset_strategy_commissioner` with `default.yaml` | Any | Active default runnable commissioner published as `ghcr.io/softmax-universe/commissioners-default` |
 | `ruleset_strategy_commissioner` with `proxywar.yaml` | ProxyWar | Active config for 2-player and 4-player rolling-window rounds |
 | `paint_arena/paint_arena_commissioner` | PaintArena | Scaffold only - no implementation |
 

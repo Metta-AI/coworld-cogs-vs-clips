@@ -2,9 +2,9 @@
 
 Configurable Coworld commissioner whose behavior is packaged in the container image.
 
-This is the shared reusable ruleset commissioner in `Metta-AI/coworld-tools`. Change configs here only when the behavior
+This is the shared reusable ruleset commissioner in `softmax-universe/coworld-tools`. Change configs here only when the behavior
 should remain shared. If a Coworld needs its own commissioner behavior, add a game-local commissioner/config in
-`Metta-AI/coworld-<slug>` and update that Coworld manifest's `commissioner[].source_url` to the game repo. The usual
+`softmax-universe/coworld-<slug>` and update that Coworld manifest's `commissioner[].source_url` to the game repo. The usual
 path is to copy this shared implementation or one of the `packages/coworld` commissioner templates into
 `coworld-<slug>/commissioner/`, then customize the game-local copy.
 
