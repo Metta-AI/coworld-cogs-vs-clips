@@ -12,6 +12,10 @@ from fastapi.testclient import TestClient
 from mettagrid.simulator.interface import Location, VisibleTalk
 from starlette.websockets import WebSocketDisconnect
 
+from cogsguard.game.teams.identity_rotation import (
+    TeamIdentityRotation,
+    team_names_by_id,
+)
 from cogsguard.semantic.state import CogsguardStateAdapter
 from cogsguard.semantic.surface import CogsguardSemanticSurface
 from cogsguard.semantic.wire import (
@@ -67,6 +71,24 @@ def test_player_wire_reconstructs_seat_visible_semantic_state(
         game.episode.player_config_message(0, "player-0")
     )
 
+    # Four Score draws its team -> corner assignment from the map seed and relabels
+    # team identities in observations every episode, so seat 0's observed team is
+    # its engine team under this episode's relabelling.
+    expected_team = "cogs"
+    if mission == "four_score":
+        seat_0 = next(
+            obj
+            for obj in game.sim.grid_objects().values()
+            if obj.get("agent_id") == 0
+        )
+        rotation = next(
+            handler
+            for handler in game.sim._event_handlers
+            if isinstance(handler, TeamIdentityRotation)
+        )
+        team_names = team_names_by_id(game.sim.config)
+        expected_team = team_names[rotation.team_permutation[seat_0["group_id"]]]
+
     for step in range(2):
         message = PlayerObservation.model_validate(game.episode.observation_message(0))
         raw = decode_player_observation(config, message)
@@ -79,14 +101,38 @@ def test_player_wire_reconstructs_seat_visible_semantic_state(
         state = build_player_state(config, message)
         assert state.game == mission
         assert state.step == step
-        assert state.self_state.attributes["team"] == (
-            "cogs_red" if mission == "four_score" else "cogs"
-        )
+        assert state.self_state.attributes["team"] == expected_team
         assert state.visible_entities
         assert state == CogsguardSemanticSurface(
             state_adapter=CogsguardStateAdapter(game=mission)
         ).build_state(actual, policy_env_info=game.episode.policy_env, step=step)
         game.sim.step()
+
+
+def test_four_score_league_games_relabel_identities_from_the_game_seed() -> None:
+    server_module = _load_cogs_vs_clips_server_module()
+
+    def first_permutations(seed: int) -> tuple:
+        env = server_module.make_env(
+            "four_score", num_agents=32, max_steps=10, seed=seed
+        )
+        sim = server_module.make_simulation("four_score", env, seed=seed)
+        rotation = next(
+            handler
+            for handler in sim._event_handlers
+            if isinstance(handler, TeamIdentityRotation)
+        )
+        drawn = (tuple(rotation.team_permutation), tuple(rotation.agent_id_permutation))
+        sim.close()
+        return drawn
+
+    assert first_permutations(3) == first_permutations(3)
+    assert first_permutations(3) != first_permutations(4)
+
+    env = server_module.make_env("machina_1", num_agents=2, max_steps=10, seed=0)
+    sim = server_module.make_simulation("machina_1", env, seed=0)
+    assert not any(isinstance(h, TeamIdentityRotation) for h in sim._event_handlers)
+    sim.close()
 
 
 def test_player_wire_preserves_visible_speech(

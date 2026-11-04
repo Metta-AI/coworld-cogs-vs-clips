@@ -1,4 +1,13 @@
-"""Four Corners variant: 1-4 teams in corner compounds."""
+"""Four Corners variant: 1-4 teams in corner compounds.
+
+The bases are mirror images of the north-east base (the hub junction and the
+gear-station row point out of each corner rather than always north/south), every
+hub is the same distance from the map centre, and the team -> corner assignment
+is drawn afresh from the map RNG each episode. Corner geometry stays with the
+corner, so over many episodes every team plays every base layout. See
+``cogsguard.missions.corner_compounds``. Tag id 0 is reserved (``RESERVED_TAG``),
+so no observed tag value is 0.
+"""
 
 from __future__ import annotations
 
@@ -10,6 +19,7 @@ from cogsguard.core import CogsguardMissionVariant, Deps
 from cogsguard.game.clips.clips import NoClipsVariant
 from cogsguard.game.extractors import ExtractorsVariant
 from cogsguard.game.teams.team import TeamConfig, TeamVariant
+from cogsguard.missions.corner_compounds import use_corner_compound_arena
 from cogsguard.missions.mission import CvCMission
 from cogsguard.missions.terrain import CompoundLocation, MachinaTerrainVariant
 from cogsguard.variants import ResolvedDeps
@@ -21,6 +31,12 @@ from mettagrid.mapgen.scenes.compound import CompoundConfig
 
 TEAM_COLORS = ["red", "blue", "green", "yellow"]
 CORNER_LOCS: list[CompoundLocation] = ["nw", "ne", "sw", "se"]
+
+# Tag ids are the positions of the env's tag names in sorted order, and an
+# observation carries a tag as its id. Id 0 would therefore reach a policy as 0,
+# the same value an empty cell has. Four Score gives id 0 to this tag, which sorts
+# before every real tag and is never carried, so every observed tag is 1 or more.
+RESERVED_TAG = "!reserved:tag_id_0"
 
 
 class FourScoreVariant(CogsguardMissionVariant):
@@ -84,6 +100,18 @@ class FourScoreVariant(CogsguardMissionVariant):
 
     @override
     def modify_env(self, mission: CvCMission, env: MettaGridConfig) -> None:
+        # Runs after MachinaTerrainVariant has placed the compounds in the arena.
+        arena = use_corner_compound_arena(
+            env.game.map_builder,
+            mirror_interiors=True,
+            equidistant=True,
+            shuffle_teams=True,
+        )
+        if arena is None:
+            raise TypeError("four_score needs a MapGen map builder with a biome arena")
+        if RESERVED_TAG not in env.game.tags:
+            env.game.tags.append(RESERVED_TAG)
+
         team_v = mission.required_variant(TeamVariant)
         seen_team_names: set[str] = set()
         held_junction_stats: list[SumGameValue] = []
