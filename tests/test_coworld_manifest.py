@@ -30,6 +30,7 @@ def test_shared_coworld_manifest_validates_both_league_variants(tmp_path: Path) 
     manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
     assert manifest["tags"] == ["multi-agent", "resource-management", "strategy"]
+    assert manifest["episode_timeout_minutes"] == 40
     assert manifest["game"]["replay_viewer"] == {"bundle": "static-replay-viewer"}
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

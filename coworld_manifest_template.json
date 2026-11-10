@@ -437,5 +437,6 @@
         "player_id": "reference-player"
       }
     ]
-  }
+  },
+  "episode_timeout_minutes": 40
 }
