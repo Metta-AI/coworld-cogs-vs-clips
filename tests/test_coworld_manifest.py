@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import yaml
-
 from coworld.certifier import build_manifest_episode_job_spec, load_coworld_package
 from coworld.manifest_validation import (
     game_config_with_tokens,
