@@ -42,9 +42,13 @@
     <script type="module">
       const status = document.getElementById('status')
       const viewer = document.getElementById('viewer')
-      const replayUrl = new URLSearchParams(window.location.search).get('replay')
+      const replayUrl = new URLSearchParams(window.location.hash.slice(1)).get('replay') || new URLSearchParams(window.location.search).get('replay')
+
+      const post = message => { if (parent !== window) parent.postMessage({src: 'coworld-replay', ...message}, '*') }
+      post({type: 'loading'})
 
       function fail(message) {
+        post({type: 'error', message})
         status.className = 'error'
         status.textContent = `Unable to load replay: ${message}`
       }
@@ -55,7 +59,7 @@
         fetch(replayUrl).then((response) => {
           if (!response.ok) throw new Error(`HTTP ${response.status}`)
           response.body?.cancel()
-          const rendererReplayUrl = new URL(replayUrl)
+          const rendererReplayUrl = new URL(replayUrl, window.location.href)
           if (rendererReplayUrl.pathname.endsWith('.replay')) {
             // MettaScope 0.26.21 already understands the current v4 JSON
             // payload, but dispatches its parser by filename suffix. A fragment
@@ -65,7 +69,7 @@
           const mettascopeUrl = new URL('./mettascope/mettascope.html', window.location.href)
           mettascopeUrl.searchParams.set('replay', rendererReplayUrl.href)
           mettascopeUrl.searchParams.set('autostart', 'true')
-          viewer.addEventListener('load', () => status.remove(), { once: true })
+          viewer.addEventListener('load', () => { status.remove(); post({type: 'ready'}) }, { once: true })
           viewer.src = mettascopeUrl.href
         }).catch((error) => fail(error.message))
       }

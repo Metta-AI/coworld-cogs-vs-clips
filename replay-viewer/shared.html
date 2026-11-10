@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cogs vs Clips replay</title>
+<body style="background:#0c141a;color:#dfeee8;font:16px system-ui">
+<p id="status" role="status">Loading replay…</p>
+<script type="module">
+import { replayMode } from './polyworld/route.js';
+const post = message => { if (parent !== window) parent.postMessage({src: 'coworld-replay', ...message}, '*'); };
+post({type: 'loading'});
+const replay = new URLSearchParams(location.hash.slice(1)).get('replay') || new URLSearchParams(location.search).get('replay');
+async function openReplay() {
+  if (!replay) throw new Error('Missing replay URL');
+  const source = new URL(replay, location.href).href;
+  const mode = await replayMode(source);
+  const target = new URL(mode ? `./polyworld/${mode}/index.html` : './mettagrid/index.html', location.href);
+  target.hash = new URLSearchParams({replay: source}).toString();
+  location.replace(target.href);
+}
+openReplay().catch(error => {
+  document.getElementById('status').textContent = error.message;
+  post({type: 'error', message: error.message});
+});
+</script>
+</body>
+</html>

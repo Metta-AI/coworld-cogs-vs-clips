@@ -7,7 +7,7 @@
   ],
   "game": {
     "name": "cogs_vs_clips",
-    "description": "Cogs vs Clips and Four Score packaged as one Coworld backed by CogsGuard and MettaGrid.",
+    "description": "Cogs vs Clips and FourScore in one Coworld, with MettaGrid and pinned Polyworld implementations.",
     "owner": "coworld@softmax.com",
     "replay_viewer": {
       "bundle": "static-replay-viewer"
@@ -28,10 +28,7 @@
       "required": [
         "tokens",
         "players",
-        "mission",
-        "max_steps",
-        "seed",
-        "step_seconds"
+        "seed"
       ],
       "properties": {
         "tokens": {
@@ -82,28 +79,119 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "maximum": 1
+        },
+        "max_ticks": {
+          "type": "integer",
+          "const": 10000
+        },
+        "map_seed": {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
         }
       },
       "oneOf": [
         {
-          "properties": {
-            "tokens": {
-              "minItems": 8,
-              "maxItems": 8
+          "required": [
+            "tokens",
+            "players",
+            "mission",
+            "max_steps",
+            "seed",
+            "step_seconds"
+          ],
+          "oneOf": [
+            {
+              "properties": {
+                "tokens": {
+                  "minItems": 8,
+                  "maxItems": 8
+                },
+                "players": {
+                  "minItems": 8,
+                  "maxItems": 8
+                },
+                "mission": {
+                  "enum": [
+                    "machina_1",
+                    "cogsguard"
+                  ]
+                }
+              }
             },
-            "players": {
-              "minItems": 8,
-              "maxItems": 8
-            },
-            "mission": {
-              "enum": [
-                "machina_1",
-                "cogsguard"
-              ]
+            {
+              "properties": {
+                "tokens": {
+                  "minItems": 32,
+                  "maxItems": 32
+                },
+                "players": {
+                  "minItems": 32,
+                  "maxItems": 32
+                },
+                "mission": {
+                  "const": "four_score"
+                }
+              }
             }
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "max_ticks"
+                ]
+              },
+              {
+                "required": [
+                  "map_seed"
+                ]
+              }
+            ]
           }
         },
         {
+          "required": [
+            "max_ticks",
+            "map_seed"
+          ],
+          "properties": {
+            "tokens": {
+              "minItems": 8,
+              "maxItems": 8
+            },
+            "players": {
+              "minItems": 8,
+              "maxItems": 8
+            },
+            "seed": {
+              "maximum": 2147483647
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "mission"
+                ]
+              },
+              {
+                "required": [
+                  "max_steps"
+                ]
+              },
+              {
+                "required": [
+                  "step_seconds"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "max_ticks"
+          ],
           "properties": {
             "tokens": {
               "minItems": 32,
@@ -113,9 +201,33 @@
               "minItems": 32,
               "maxItems": 32
             },
-            "mission": {
-              "const": "four_score"
+            "seed": {
+              "maximum": 2147483647
             }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "mission"
+                ]
+              },
+              {
+                "required": [
+                  "max_steps"
+                ]
+              },
+              {
+                "required": [
+                  "step_seconds"
+                ]
+              },
+              {
+                "required": [
+                  "map_seed"
+                ]
+              }
+            ]
           }
         }
       ]
@@ -123,11 +235,8 @@
     "results_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "type": "object",
-      "additionalProperties": false,
       "required": [
-        "scores",
-        "steps",
-        "mission"
+        "scores"
       ],
       "properties": {
         "scores": {
@@ -137,24 +246,102 @@
           "items": {
             "type": "number"
           }
-        },
-        "steps": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "mission": {
-          "type": "string",
-          "enum": [
-            "machina_1",
-            "cogsguard",
-            "four_score"
-          ]
-        },
-        "replay_sha256": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
         }
-      }
+      },
+      "oneOf": [
+        {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scores",
+            "steps",
+            "mission"
+          ],
+          "properties": {
+            "scores": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 32,
+              "items": {
+                "type": "number"
+              }
+            },
+            "steps": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mission": {
+              "type": "string",
+              "enum": [
+                "machina_1",
+                "cogsguard",
+                "four_score"
+              ]
+            },
+            "replay_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scores",
+            "ticks",
+            "seed",
+            "outcome"
+          ],
+          "properties": {
+            "scores": {
+              "type": "array",
+              "minItems": 8,
+              "maxItems": 32,
+              "items": {
+                "type": "number",
+                "minimum": 0
+              },
+              "oneOf": [
+                {
+                  "minItems": 8,
+                  "maxItems": 8
+                },
+                {
+                  "minItems": 32,
+                  "maxItems": 32
+                }
+              ]
+            },
+            "ticks": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            },
+            "seed": {
+              "type": "integer"
+            },
+            "outcome": {
+              "type": "string"
+            },
+            "banked_gold": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "type": "integer"
+              }
+            },
+            "returned": {
+              "type": "array",
+              "maxItems": 0,
+              "items": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      ]
     },
     "protocols": {
       "player": {
@@ -205,7 +392,11 @@
           }
         }
       ]
-    }
+    },
+    "player_runtime": [
+      "platform-hosted",
+      "game-hosted"
+    ]
   },
   "player": [
     {
@@ -219,6 +410,13 @@
       ],
       "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player",
       "description": "CogsGuard Coworld reference player for Cogs vs Clips and Four Score over coworld.player.v1."
+    },
+    {
+      "id": "polyworld-baseline",
+      "name": "Polyworld BASIC baseline",
+      "type": "player",
+      "file": "vendor/polyworld-cogs-vs-clips/players/base.bas",
+      "description": "BASIC baseline for the two Polyworld variants only; MettaGrid variants require container players."
     }
   ],
   "commissioner": [
@@ -389,6 +587,159 @@
         "step_seconds": 0.02
       },
       "description": "32-agent Four Score daily tournament variant with four submitted policies expanded into four 8-agent teams."
+    },
+    {
+      "id": "polyworld-machina-daily",
+      "name": "Polyworld Cooperative CvC",
+      "description": "Daily map_seed is frozen by the league planner. This manifest default is a reproducible preview fixture.",
+      "game_config": {
+        "players": [
+          {
+            "name": "Cog 0"
+          },
+          {
+            "name": "Cog 1"
+          },
+          {
+            "name": "Cog 2"
+          },
+          {
+            "name": "Cog 3"
+          },
+          {
+            "name": "Cog 4"
+          },
+          {
+            "name": "Cog 5"
+          },
+          {
+            "name": "Cog 6"
+          },
+          {
+            "name": "Cog 7"
+          }
+        ],
+        "seed": 1,
+        "map_seed": 20261110,
+        "max_ticks": 10000
+      },
+      "game_runnable": {
+        "type": "game",
+        "image": "{{POLYWORLD_COOPERATIVE_IMAGE}}",
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/ae5bc282e9d96d9988d0fdff67e193b9927e2d0a"
+      }
+    },
+    {
+      "id": "polyworld-four-score",
+      "name": "Polyworld FourScore",
+      "game_config": {
+        "players": [
+          {
+            "name": "Cog 0"
+          },
+          {
+            "name": "Cog 1"
+          },
+          {
+            "name": "Cog 2"
+          },
+          {
+            "name": "Cog 3"
+          },
+          {
+            "name": "Cog 4"
+          },
+          {
+            "name": "Cog 5"
+          },
+          {
+            "name": "Cog 6"
+          },
+          {
+            "name": "Cog 7"
+          },
+          {
+            "name": "Cog 8"
+          },
+          {
+            "name": "Cog 9"
+          },
+          {
+            "name": "Cog 10"
+          },
+          {
+            "name": "Cog 11"
+          },
+          {
+            "name": "Cog 12"
+          },
+          {
+            "name": "Cog 13"
+          },
+          {
+            "name": "Cog 14"
+          },
+          {
+            "name": "Cog 15"
+          },
+          {
+            "name": "Cog 16"
+          },
+          {
+            "name": "Cog 17"
+          },
+          {
+            "name": "Cog 18"
+          },
+          {
+            "name": "Cog 19"
+          },
+          {
+            "name": "Cog 20"
+          },
+          {
+            "name": "Cog 21"
+          },
+          {
+            "name": "Cog 22"
+          },
+          {
+            "name": "Cog 23"
+          },
+          {
+            "name": "Cog 24"
+          },
+          {
+            "name": "Cog 25"
+          },
+          {
+            "name": "Cog 26"
+          },
+          {
+            "name": "Cog 27"
+          },
+          {
+            "name": "Cog 28"
+          },
+          {
+            "name": "Cog 29"
+          },
+          {
+            "name": "Cog 30"
+          },
+          {
+            "name": "Cog 31"
+          }
+        ],
+        "seed": 1,
+        "max_ticks": 10000
+      },
+      "description": "Full-length deterministic competition match.",
+      "game_runnable": {
+        "type": "game",
+        "image": "{{POLYWORLD_FOURSCORE_IMAGE}}",
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/ae5bc282e9d96d9988d0fdff67e193b9927e2d0a"
+      }
     }
   ],
   "certification": {
