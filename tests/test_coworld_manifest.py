@@ -71,6 +71,7 @@ def test_shared_coworld_manifest_validates_both_league_variants(tmp_path: Path) 
     )
     assert package.game.image == "coworld-cogs-vs-clips-game:latest"
     assert package.game.run == ("python", "/app/server.py")
+    assert manifest["game"]["runnable"]["resources"]["requests"]["memory"] == "4Gi"
     assert package.manifest.player[0].id == "reference-player"
     assert (
         package.manifest.player[0].image

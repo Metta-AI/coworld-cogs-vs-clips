@@ -55,7 +55,9 @@ coworld upload-coworld dist/coworld_manifest.json
 
 The manifest and Compose file contain the game and reference player. Softmax's
 platform ladders schedule both leagues; commissioner containers are not release
-inputs. Build from a committed, pushed revision so source references are resolvable.
+inputs. The shared game reserves 4 GiB for full 32-player, 10,000-step replay
+recording; local Docker runs use the same allocation. Build from a committed,
+pushed revision so source references are resolvable.
 
 The deploy workflow requires `SOFTMAX_API_TOKEN` in the `SOFTMAX_OBSERVATORY`
 GitHub environment. A missing token stops deployment before the version lookup.
