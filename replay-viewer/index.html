@@ -19,6 +19,7 @@
       }
       iframe {
         display: block;
+        transform-origin: top left;
       }
       #status {
         align-items: center;
@@ -43,6 +44,15 @@
       const status = document.getElementById('status')
       const viewer = document.getElementById('viewer')
       const replayUrl = new URLSearchParams(window.location.search).get('replay')
+
+      // MettaScope's fixed-size controls need a desktop canvas even in a small embed.
+      new ResizeObserver(([entry]) => {
+        const { width, height } = entry.contentRect
+        const scale = Math.min(1, width / 1600, height / 900)
+        viewer.style.width = `${width / scale}px`
+        viewer.style.height = `${height / scale}px`
+        viewer.style.transform = `scale(${scale})`
+      }).observe(document.body)
 
       function fail(message) {
         status.className = 'error'
