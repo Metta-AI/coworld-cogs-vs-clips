@@ -104,3 +104,19 @@ and may keep submitting actions and policy infos, but those actions are ignored 
 
 If a human-controlled slot is idle for a tick, the applied action is `noop`. Invalid or missing actions are treated as
 `noop`. A player can reconnect to the same slot with the same token while the episode is running.
+
+
+## Polyworld variants
+
+`polyworld-machina-daily` and `polyworld-four-score` use the same
+`coworld.player.v1` container exchange, implemented by the pinned upstream game.
+They also accept BASIC source or tensor ZIP file seats alongside containers.
+MettaGrid variants continue to require containers.
+
+Polyworld declares its observation reconstruction in `player_config.observation_contract`:
+`polyworld-machina-74/v1` for cooperative CvC, or
+`polyworld-reconstructed-134/v1` for FourScore. These are not MettaGrid checkpoint
+parity guarantees. Qualify an imported policy against its selected variant.
+Only noop and the four movement actions are supported; vibe actions and speech
+are not implemented. See the pinned upstream `docs/policies.md` and
+`docs/cooperative-migration.md` for file-policy APIs and qualification.

@@ -48,7 +48,9 @@ pytest
 ## Coworld Build
 
 ```bash
-coworld build --version 0.2.38
+git submodule update --init
+# Install Nim 2.2.10 and Emscripten for the Polyworld browser builds.
+coworld build --version VERSION
 coworld certify dist/coworld_manifest.json
 coworld upload-coworld dist/coworld_manifest.json
 ```
@@ -77,3 +79,51 @@ The bridge accepts `reset`, `encode`, `teacher`, and `step` commands. `reset`
 must name 8 players for CogsGuard/Machina 1 or 32 for Four Score.
 Set Metta's `max_decisions` to at least `players * max_steps`; the published
 10,000-step horizons need 80,000 or 320,000 interactions, respectively.
+
+## Polyworld implementation
+
+`vendor/polyworld-cogs-vs-clips` is a commit-pinned Git submodule of
+[polyworld-cogs-vs-clips](https://github.com/softmax-universe/polyworld-cogs-vs-clips).
+Upstream owns simulation rules, mixed-policy hosting, native images, BASIC assets,
+and replay decoders. This repository owns the shared Coworld identity, manifest,
+variant image selection, and combined replay bundle. Do not copy simulation code here.
+
+| Variant | Implementation | Seats | Map |
+| --- | --- | --- | --- |
+| `machina-1-daily` | MettaGrid cooperative CvC | 8 | Original daily mission |
+| `four-score-daily` | MettaGrid FourScore | 32 | Original daily mission |
+| `polyworld-machina-daily` | Polyworld cooperative CvC | 8 | Explicit daily `map_seed` |
+| `polyworld-four-score` | Polyworld FourScore | 32 | Fixed FourScore map |
+
+The original variants and default certification remain available. Each Polyworld
+variant selects its own compiled game through `game_runnable`. Both accept mixed
+BASIC/file and Docker seats. MettaGrid variants require Docker players; select the
+reference player for their certification. `polyworld-baseline` is for Polyworld only.
+Each engine retains its own observation semantics. Existing container images need
+qualification against the selected Polyworld mode before league enrollment.
+
+For local viewer checks, `CVC_METTAGRID_VIEWER_IMAGE=<cached-game-image>` reuses
+that image's `/app/mettascope` assets. Record its digest in validation evidence.
+`POLYWORLD_DEPS` may point to an existing dependency directory matching upstream's
+lock. Viewer output must be a new directory; builds do not delete prior bundles.
+
+The shared viewer selects MettaScope, cooperative Polyworld, or FourScore Polyworld
+from the recorded replay format. Unsupported Polyworld versions fail visibly.
+Old uploaded Coworld versions retain their original immutable viewer bundles.
+
+Create separate cooperative and FourScore standings. Each league must set
+`commissioner_config.default_variant_id` explicitly. The cooperative Polyworld
+league also requires the platform daily-map planner (`daily_map_seed: true`) and
+the upstream team-score settings. The preview map seed in this manifest is fixed;
+it does not implement daily scheduling by itself.
+
+Before release, qualify both variant images separately: default Coworld certification
+only exercises the MettaGrid runnable. Run full all-file, all-container, and mixed
+Polyworld episodes, then a real Observatory round and replay check. Preserve old
+league history and start fresh Polyworld standings. Publishing these sources does
+not enroll policies, change a league, or make Polyworld official.
+
+For a dependency update, check out the reviewed upstream commit inside the submodule,
+update both variant `source_url` revisions, rebuild both images and viewers, then
+commit the submodule pointer. Keep the upstream engine lock and Coworld dependency
+pin in the same reviewed release chain.

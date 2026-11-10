@@ -34,3 +34,19 @@ services:
       args:
         COMMISSIONER_KEY: config_driven
         RULESET_STRATEGY_CONFIG_NAME: four_score
+  polyworld-cooperative:
+    image: coworld-cogs-vs-clips-polyworld-cooperative:latest
+    platform: linux/amd64
+    build:
+      context: ./vendor/polyworld-cogs-vs-clips
+      dockerfile: coworld/Dockerfile
+      args:
+        COOPERATIVE: "1"
+  polyworld-fourscore:
+    image: coworld-cogs-vs-clips-polyworld-fourscore:latest
+    platform: linux/amd64
+    build:
+      context: ./vendor/polyworld-cogs-vs-clips
+      dockerfile: coworld/Dockerfile
+      args:
+        COOPERATIVE: "0"
