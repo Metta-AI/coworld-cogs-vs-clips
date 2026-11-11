@@ -40,9 +40,9 @@ container_id="$(docker create "${viewer_image}")"
 docker cp "${container_id}:${viewer_path}" "${output_dir}/mettagrid/mettascope"
 cp "${repo_dir}/replay-viewer/index.html" "${output_dir}/mettagrid/index.html"
 
-# The pinned upstream owns both Polyworld simulations and their replay routing.
+# The upstream owns both Polyworld simulations and their replay routing.
 upstream="${repo_dir}/vendor/polyworld-cogs-vs-clips"
-if [[ -z "${POLYWORLD_DEPS:-}" ]]; then
+if [[ -n "${POLYWORLD_REVISION:-}" || -z "${POLYWORLD_DEPS:-}" ]]; then
   python3 "${upstream}/tools/setup_dependencies.py"
   export POLYWORLD_DEPS="${upstream}/.deps"
 fi
