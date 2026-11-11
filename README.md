@@ -102,6 +102,12 @@ reference player for their certification. `polyworld-baseline` is for Polyworld 
 Each engine retains its own observation semantics. Existing container images need
 qualification against the selected Polyworld mode before league enrollment.
 
+The pinned game owns its Coworld host and transport; no shared Polyworld transport
+change is required. Both Docker modes expose the lab agents' 74-feature vocabulary,
+with observer-relative Cogs/Clips teams. Dense neural file inputs remain separate.
+See the upstream [qualification guide](vendor/polyworld-cogs-vs-clips/docs/cooperative-migration.md)
+for the retained historical lab-image evidence and required new-build certification.
+
 For local viewer checks, `CVC_METTAGRID_VIEWER_IMAGE=<cached-game-image>` reuses
 that image's `/app/mettascope` assets. Record its digest in validation evidence.
 `POLYWORLD_DEPS` may point to an existing dependency directory matching upstream's
