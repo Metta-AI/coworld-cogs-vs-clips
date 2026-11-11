@@ -640,7 +640,7 @@
       "game_runnable": {
         "type": "game",
         "image": "{{POLYWORLD_COOPERATIVE_IMAGE}}",
-        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/ae5bc282e9d96d9988d0fdff67e193b9927e2d0a"
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
       }
     },
     {
@@ -752,7 +752,7 @@
       "game_runnable": {
         "type": "game",
         "image": "{{POLYWORLD_FOURSCORE_IMAGE}}",
-        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/ae5bc282e9d96d9988d0fdff67e193b9927e2d0a"
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
       }
     }
   ],
