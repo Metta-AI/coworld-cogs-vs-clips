@@ -7,7 +7,7 @@
   ],
   "game": {
     "name": "cogs_vs_clips",
-    "description": "Cogs vs Clips and FourScore in one Coworld, with MettaGrid and pinned Polyworld implementations.",
+    "description": "Cogs vs Clips and FourScore in one Coworld, with MettaGrid and Polyworld implementations.",
     "owner": "coworld@softmax.com",
     "replay_viewer": {
       "bundle": "static-replay-viewer"
@@ -15,7 +15,7 @@
     "runnable": {
       "type": "game",
       "image": "{{POLYWORLD_COOPERATIVE_IMAGE}}",
-      "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
+      "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/main"
     },
     "config_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -640,7 +640,7 @@
       "game_runnable": {
         "type": "game",
         "image": "{{POLYWORLD_COOPERATIVE_IMAGE}}",
-        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/main"
       }
     },
     {
@@ -752,7 +752,7 @@
       "game_runnable": {
         "type": "game",
         "image": "{{POLYWORLD_FOURSCORE_IMAGE}}",
-        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
+        "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/main"
       }
     }
   ],

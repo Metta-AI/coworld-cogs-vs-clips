@@ -50,7 +50,7 @@ pytest
 ```bash
 git submodule update --init
 # Install Nim 2.2.10 and Emscripten for the Polyworld browser builds.
-coworld build --version VERSION
+./tools/build.sh --version VERSION
 coworld certify dist/coworld_manifest.json --timeout-seconds 300
 coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300
 ```
@@ -82,7 +82,7 @@ Set Metta's `max_decisions` to at least `players * max_steps`; the published
 
 ## Polyworld implementation
 
-`vendor/polyworld-cogs-vs-clips` is a commit-pinned Git submodule of
+`vendor/polyworld-cogs-vs-clips` tracks the `main` branch of
 [polyworld-cogs-vs-clips](https://github.com/softmax-universe/polyworld-cogs-vs-clips).
 Upstream owns simulation rules, mixed-policy hosting, native images, BASIC assets,
 and replay decoders. This repository owns the shared Coworld identity, manifest,
@@ -105,7 +105,7 @@ and explicitly select the MettaGrid image; use Docker players for every seat.
 Each engine retains its own observation semantics. Existing container images need
 qualification against the selected Polyworld mode before league enrollment.
 
-The pinned game owns its Coworld host and transport; no shared Polyworld transport
+The upstream game owns its Coworld host and transport; no shared Polyworld transport
 change is required. Both Docker modes expose the lab agents' 74-feature vocabulary,
 with observer-relative Cogs/Clips teams. Dense neural file inputs remain separate.
 See the upstream [qualification guide](vendor/polyworld-cogs-vs-clips/docs/cooperative-migration.md)
@@ -132,10 +132,17 @@ Polyworld episodes, then a real Observatory round and replay check. Preserve old
 league history and start fresh Polyworld standings. Publishing these sources does
 not enroll policies, change a league, or make Polyworld official.
 
-For a dependency update, check out the reviewed upstream commit inside the submodule,
-update the default and both variant `source_url` revisions, rebuild both images and viewers, then
-commit the submodule pointer. Keep the upstream engine lock and Coworld dependency
-pin in the same reviewed release chain.
+`./tools/build.sh --version VERSION` refreshes the CvC submodule from `main`,
+resolves Polyworld `main` once, and supplies that exact engine revision to both
+native images and replay viewers. The generated manifest records the CvC commit;
+`dist/dependencies.lock` records the resolved Nim dependencies. Dirty upstream
+checkouts fail before updating. Rebuilds refresh dependencies without manual SHA
+edits. Coworld's CLI dependency accepts releases from 0.1.69 onward. Existing
+compiler and third-party Nim library pins remain unchanged.
+
+Use this build entry point locally and in CI; direct Compose builds require the
+resolved `POLYWORLD_REVISION` explicitly. Published images and replay bundles stay
+immutable, and certification is still required before upload.
 
 
 ## Building without a CI upload credential

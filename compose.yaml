@@ -41,6 +41,7 @@ services:
       context: ./vendor/polyworld-cogs-vs-clips
       dockerfile: coworld/Dockerfile
       args:
+        POLYWORLD_REVISION: ${POLYWORLD_REVISION:?Run tools/build.sh to resolve Polyworld}
         COOPERATIVE: "1"
   polyworld-fourscore:
     image: coworld-cogs-vs-clips-polyworld-fourscore:latest
@@ -49,4 +50,5 @@ services:
       context: ./vendor/polyworld-cogs-vs-clips
       dockerfile: coworld/Dockerfile
       args:
+        POLYWORLD_REVISION: ${POLYWORLD_REVISION:?Run tools/build.sh to resolve Polyworld}
         COOPERATIVE: "0"

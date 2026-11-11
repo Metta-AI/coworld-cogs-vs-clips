@@ -1,3 +1,4 @@
 [submodule "vendor/polyworld-cogs-vs-clips"]
 	path = vendor/polyworld-cogs-vs-clips
 	url = https://github.com/softmax-universe/polyworld-cogs-vs-clips.git
+	branch = main
