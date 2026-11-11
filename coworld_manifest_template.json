@@ -14,12 +14,8 @@
     },
     "runnable": {
       "type": "game",
-      "image": "{{GAME_IMAGE}}",
-      "run": [
-        "python",
-        "/app/server.py"
-      ],
-      "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+      "image": "{{POLYWORLD_COOPERATIVE_IMAGE}}",
+      "source_url": "https://github.com/softmax-universe/polyworld-cogs-vs-clips/tree/56546c9153f20cca13072b4a17880ef1f120b19e"
     },
     "config_schema": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -477,7 +473,16 @@
         "seed": 0,
         "step_seconds": 0.02
       },
-      "description": "8-agent Cogs vs Clips daily tournament variant backed by the Cogsguard Machina 1 mission."
+      "description": "8-agent Cogs vs Clips daily tournament variant backed by the Cogsguard Machina 1 mission.",
+      "game_runnable": {
+        "type": "game",
+        "image": "{{GAME_IMAGE}}",
+        "run": [
+          "python",
+          "/app/server.py"
+        ],
+        "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+      }
     },
     {
       "id": "four-score-daily",
@@ -586,7 +591,16 @@
         "seed": 0,
         "step_seconds": 0.02
       },
-      "description": "32-agent Four Score daily tournament variant with four submitted policies expanded into four 8-agent teams."
+      "description": "32-agent Four Score daily tournament variant with four submitted policies expanded into four 8-agent teams.",
+      "game_runnable": {
+        "type": "game",
+        "image": "{{GAME_IMAGE}}",
+        "run": [
+          "python",
+          "/app/server.py"
+        ],
+        "source_url": "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+      }
     },
     {
       "id": "polyworld-machina-daily",
@@ -746,59 +760,58 @@
     "game_config": {
       "players": [
         {
-          "name": "Player 1"
+          "name": "Cog 0"
         },
         {
-          "name": "Player 2"
+          "name": "Cog 1"
         },
         {
-          "name": "Player 3"
+          "name": "Cog 2"
         },
         {
-          "name": "Player 4"
+          "name": "Cog 3"
         },
         {
-          "name": "Player 5"
+          "name": "Cog 4"
         },
         {
-          "name": "Player 6"
+          "name": "Cog 5"
         },
         {
-          "name": "Player 7"
+          "name": "Cog 6"
         },
         {
-          "name": "Player 8"
+          "name": "Cog 7"
         }
       ],
-      "mission": "cogsguard",
-      "max_steps": 3,
-      "seed": 0,
-      "step_seconds": 0.02
+      "seed": 1,
+      "map_seed": 20261110,
+      "max_ticks": 10000
     },
     "players": [
       {
         "player_id": "reference-player"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       },
       {
-        "player_id": "reference-player"
+        "player_id": "polyworld-baseline"
       }
     ]
   }

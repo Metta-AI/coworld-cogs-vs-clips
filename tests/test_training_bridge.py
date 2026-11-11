@@ -12,7 +12,7 @@ from training_bridge import TrainingSession  # noqa: E402
 
 @pytest.mark.parametrize(
     "variant,players",
-    [("certification", 8), ("machina-1-daily", 8), ("four-score-daily", 32)],
+    [("machina-1-daily", 8), ("four-score-daily", 32)],
 )
 def test_complete_game_uses_published_seat_observations(
     variant: str, players: int
@@ -51,7 +51,7 @@ def test_complete_game_uses_published_seat_observations(
 
 
 def test_rejected_action_does_not_advance_game() -> None:
-    session = TrainingSession("certification", steps=2)
+    session = TrainingSession("machina-1-daily", steps=2)
     session.reset({"seed": "test-seed", "players": 8})
     assert (
         session.step(

@@ -26,17 +26,20 @@ def test_shared_coworld_manifest_validates_both_league_variants(tmp_path: Path) 
     manifest_path = tmp_path / "coworld_manifest.json"
     manifest = json.loads(template_path.read_text(encoding="utf-8"))
     manifest["game"]["version"] = "0.2.18"
-    manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-game:latest"
+    manifest["game"]["runnable"]["image"] = "coworld-cogs-vs-clips-polyworld-cooperative:latest"
     manifest["player"][0]["image"] = "coworld-cogs-vs-clips-reference-player:latest"
     manifest["commissioner"][0]["image"] = "coworld-cogs-vs-clips-commissioner:latest"
     manifest["commissioner"][1]["image"] = "coworld-four-score-commissioner:latest"
     assert manifest["tags"] == ["multi-agent", "resource-management", "strategy"]
     assert manifest["game"]["replay_viewer"] == {"bundle": "static-replay-viewer"}
+    player_file = Path(manifest["player"][1]["file"])
+    (tmp_path / player_file).parent.mkdir(parents=True)
+    (tmp_path / player_file).write_bytes((template_path.parent / player_file).read_bytes())
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert (
         manifest["game"]["runnable"]["source_url"]
-        == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main"
+        == manifest["variants"][2]["game_runnable"]["source_url"]
     )
 
     package = load_coworld_package(manifest_path)
@@ -68,8 +71,8 @@ def test_shared_coworld_manifest_validates_both_league_variants(tmp_path: Path) 
         pages["player"]
         == "https://github.com/Metta-AI/coworld-cogs-vs-clips/tree/main/coworld/player"
     )
-    assert package.game.image == "coworld-cogs-vs-clips-game:latest"
-    assert package.game.run == ("python", "/app/server.py")
+    assert package.game.image == "coworld-cogs-vs-clips-polyworld-cooperative:latest"
+    assert package.game.run == ()
     assert package.manifest.player[0].id == "reference-player"
     assert (
         package.manifest.player[0].image
@@ -110,20 +113,4 @@ def test_shared_coworld_manifest_validates_both_league_variants(tmp_path: Path) 
         "cogs-vs-clips-commissioner",
         "four-score-commissioner",
     ]
-    assert config == {
-        "players": [
-            {"name": "Player 1"},
-            {"name": "Player 2"},
-            {"name": "Player 3"},
-            {"name": "Player 4"},
-            {"name": "Player 5"},
-            {"name": "Player 6"},
-            {"name": "Player 7"},
-            {"name": "Player 8"},
-        ],
-        "mission": "cogsguard",
-        "max_steps": 3,
-        "seed": 0,
-        "step_seconds": 0.02,
-        "tokens": tokens,
-    }
+    assert config == {**manifest["variants"][2]["game_config"], "tokens": tokens}

@@ -19,14 +19,11 @@ OBSERVATION_TOKENS = 500
 class TrainingSession:
     def __init__(self, variant: str, steps: int | None) -> None:
         manifest = json.loads((ROOT / "coworld_manifest_template.json").read_text())
-        if variant == "certification":
-            self.config = manifest["certification"]["game_config"]
-        else:
-            self.config = next(
-                entry["game_config"]
-                for entry in manifest["variants"]
-                if entry["id"] == variant
-            )
+        self.config = next(
+            entry["game_config"]
+            for entry in manifest["variants"]
+            if entry["id"] == variant
+        )
         if steps is not None:
             if not 1 <= steps <= 10000:
                 raise ValueError("Steps must be between 1 and 10000")
@@ -155,8 +152,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--variant",
-        choices=("certification", "machina-1-daily", "four-score-daily"),
-        default="certification",
+        choices=("machina-1-daily", "four-score-daily"),
+        default="machina-1-daily",
     )
     parser.add_argument("--steps", type=int)
     args = parser.parse_args()

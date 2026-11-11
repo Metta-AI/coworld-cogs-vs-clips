@@ -51,8 +51,8 @@ pytest
 git submodule update --init
 # Install Nim 2.2.10 and Emscripten for the Polyworld browser builds.
 coworld build --version VERSION
-coworld certify dist/coworld_manifest.json
-coworld upload-coworld dist/coworld_manifest.json
+coworld certify dist/coworld_manifest.json --timeout-seconds 300
+coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300
 ```
 
 ## Typed semantic player
@@ -73,7 +73,7 @@ capture submitted speech.
 
 From a checkout with `cogsguard[coworld]` installed, run
 `python coworld/game/training_bridge.py --variant machina-1-daily --steps 32`
-as a JSONL subprocess. Other variants are `certification` and
+as a JSONL subprocess. Its variants are `machina-1-daily` (the default) and
 `four-score-daily`. Omit `--steps` for the full published 10,000-step horizon.
 The bridge accepts `reset`, `encode`, `teacher`, and `step` commands. `reset`
 must name 8 players for CogsGuard/Machina 1 or 32 for Four Score.
@@ -95,10 +95,13 @@ variant image selection, and combined replay bundle. Do not copy simulation code
 | `polyworld-machina-daily` | Polyworld cooperative CvC | 8 | Explicit daily `map_seed` |
 | `polyworld-four-score` | Polyworld FourScore | 32 | Fixed FourScore map |
 
-The original variants and default certification remain available. Each Polyworld
-variant selects its own compiled game through `game_runnable`. Both accept mixed
-BASIC/file and Docker seats. MettaGrid variants require Docker players; select the
-reference player for their certification. `polyworld-baseline` is for Polyworld only.
+Each named variant selects its compiled game through `game_runnable`. The default
+runnable and certification fixture use Polyworld cooperative: one Docker reference
+player and seven BASIC players complete 10,000 ticks. This exercises every bundled
+player, as certification requires. Both Polyworld variants accept mixed BASIC/file
+and Docker seats. The two original MettaGrid variants retain their configuration
+and explicitly select the MettaGrid image; use Docker players for every seat.
+`polyworld-baseline` is for Polyworld only.
 Each engine retains its own observation semantics. Existing container images need
 qualification against the selected Polyworld mode before league enrollment.
 
@@ -123,13 +126,28 @@ league also requires the platform daily-map planner (`daily_map_seed: true`) and
 the upstream team-score settings. The preview map seed in this manifest is fixed;
 it does not implement daily scheduling by itself.
 
-Before release, qualify both variant images separately: default Coworld certification
-only exercises the MettaGrid runnable. Run full all-file, all-container, and mixed
+Before release, qualify all variant images: default Coworld certification exercises
+the mixed cooperative fixture. Run full all-file, all-container, and mixed
 Polyworld episodes, then a real Observatory round and replay check. Preserve old
 league history and start fresh Polyworld standings. Publishing these sources does
 not enroll policies, change a league, or make Polyworld official.
 
 For a dependency update, check out the reviewed upstream commit inside the submodule,
-update both variant `source_url` revisions, rebuild both images and viewers, then
+update the default and both variant `source_url` revisions, rebuild both images and viewers, then
 commit the submodule pointer. Keep the upstream engine lock and Coworld dependency
 pin in the same reviewed release chain.
+
+
+## Building without a CI upload credential
+
+Dispatch `Deploy CogsGuard Coworld` with `build_only=true` and an explicit version
+when `SOFTMAX_API_TOKEN` is unavailable. The runner builds and locally certifies the
+same release, then retains its manifest, viewer, policy files, and compressed Docker
+images for seven days. It does not upload or select a canonical Coworld.
+
+Download the artifact into `dist/`, verify `dist/images.tar.gz.sha256`, and run
+`docker load --input dist/images.tar.gz`. With your normal Softmax login, run
+`coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300` and verify hosted certification.
+This keeps upload credentials on the uploader's machine. Select the explicit
+version using `coworld next-version cogs_vs_clips` before dispatch; check again before
+upload if another release could have landed.

@@ -19,6 +19,15 @@ on:
       - '!Dockerfile.systemone-player'
       - '!.github/workflows/deploy-game.yml'
   workflow_dispatch:
+    inputs:
+      build_only:
+        description: Build and certify artifacts for upload from another machine
+        type: boolean
+        default: false
+      version:
+        description: Explicit Coworld version (required for build-only)
+        type: string
+        required: false
 
 concurrency:
   group: deploy-game
@@ -52,6 +61,7 @@ jobs:
           "${RUNNER_TEMP}/emsdk/emsdk" activate 4.0.15
 
       - name: Seed Softmax credentials
+        if: ${{ !inputs.build_only }}
         env:
           SOFTMAX_API_TOKEN: ${{ secrets.SOFTMAX_API_TOKEN }}
         run: |
@@ -64,11 +74,54 @@ jobs:
 
       - name: Resolve next Coworld version
         id: version
-        run: echo "value=$(coworld next-version cogs_vs_clips)" >> "${GITHUB_OUTPUT}"
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          BUILD_ONLY: ${{ inputs.build_only }}
+        run: |
+          if [[ -n "${REQUESTED_VERSION}" ]]; then
+            [[ "${REQUESTED_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+            echo "value=${REQUESTED_VERSION}" >> "${GITHUB_OUTPUT}"
+          elif [[ "${BUILD_ONLY}" == "true" ]]; then
+            echo "::error::Build-only releases require an explicit version"
+            exit 1
+          else
+            echo "value=$(coworld next-version cogs_vs_clips)" >> "${GITHUB_OUTPUT}"
+          fi
 
-      - name: Build, certify, and upload
+      - name: Build and certify
         run: |
           source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
           coworld build --version "${{ steps.version.outputs.value }}"
-          coworld certify dist/coworld_manifest.json
-          coworld upload-coworld dist/coworld_manifest.json
+          coworld certify dist/coworld_manifest.json --timeout-seconds 300
+
+      - name: Upload and check hosted certification
+        if: ${{ !inputs.build_only }}
+        run: coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300
+
+      - name: Export built images
+        if: ${{ inputs.build_only }}
+        run: |
+          python - <<'PYEXPORT'
+          import json
+          import subprocess
+          from pathlib import Path
+          manifest = json.loads(Path("dist/coworld_manifest.json").read_text())
+          runnables = [manifest["game"]["runnable"]]
+          runnables.extend(v["game_runnable"] for v in manifest["variants"] if v.get("game_runnable"))
+          for role in ["player", "commissioner", "grader", "diagnoser", "optimizer"]:
+              runnables.extend(manifest.get(role, []))
+          images = sorted({r["image"] for r in runnables if "image" in r})
+          subprocess.run(["docker", "image", "save", "--output", "dist/images.tar", *images], check=True)
+          PYEXPORT
+          gzip dist/images.tar
+          sha256sum dist/images.tar.gz > dist/images.tar.gz.sha256
+          du -h dist/images.tar.gz
+
+      - name: Retain certified release artifacts
+        if: ${{ inputs.build_only }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cogs-vs-clips-${{ steps.version.outputs.value }}-${{ github.sha }}
+          path: dist/
+          compression-level: 0
+          retention-days: 7
