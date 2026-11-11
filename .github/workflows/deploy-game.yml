@@ -92,11 +92,11 @@ jobs:
         run: |
           source "${RUNNER_TEMP}/emsdk/emsdk_env.sh"
           coworld build --version "${{ steps.version.outputs.value }}"
-          coworld certify dist/coworld_manifest.json
+          coworld certify dist/coworld_manifest.json --timeout-seconds 300
 
       - name: Upload and check hosted certification
         if: ${{ !inputs.build_only }}
-        run: coworld upload-coworld dist/coworld_manifest.json
+        run: coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300
 
       - name: Export built images
         if: ${{ inputs.build_only }}
