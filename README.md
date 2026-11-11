@@ -127,3 +127,18 @@ For a dependency update, check out the reviewed upstream commit inside the submo
 update both variant `source_url` revisions, rebuild both images and viewers, then
 commit the submodule pointer. Keep the upstream engine lock and Coworld dependency
 pin in the same reviewed release chain.
+
+
+## Building without a CI upload credential
+
+Dispatch `Deploy CogsGuard Coworld` with `build_only=true` and an explicit version
+when `SOFTMAX_API_TOKEN` is unavailable. The runner builds and locally certifies the
+same release, then retains its manifest, viewer, policy files, and compressed Docker
+images for seven days. It does not upload or select a canonical Coworld.
+
+Download the artifact into `dist/`, verify `dist/images.tar.gz.sha256`, and run
+`docker load --input dist/images.tar.gz`. With your normal Softmax login, run
+`coworld upload-coworld dist/coworld_manifest.json` and verify hosted certification.
+This keeps upload credentials on the uploader's machine. Reserve the explicit
+version using `coworld next-version cogs_vs_clips` before dispatch; check again before
+upload if another release could have landed.
