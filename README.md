@@ -136,6 +136,14 @@ that image's `/app/mettascope` assets. Record its digest in validation evidence.
 `POLYWORLD_DEPS` may point to an existing dependency directory matching upstream's
 lock. Viewer output must be a new directory; builds do not delete prior bundles.
 
+Polyworld cooperative preserves the original 21×21 base enclosure, four five-tile
+gates, corner extractors, southern gear row, and cardinal spawns. Its seeded
+asteroid boundary varies daily; the outer map remains a Polyworld adaptation.
+
+Both Polyworld viewers fit their HUD to the frame. Ctrl/Cmd +/− adjusts UI scale,
+Ctrl/Cmd 0 restores automatic sizing, and F11 toggles fullscreen. Manual scale
+preferences persist without changing the world camera zoom.
+
 The shared viewer selects MettaScope, cooperative Polyworld, or FourScore Polyworld
 from the recorded replay format. Unsupported Polyworld versions fail visibly.
 Old uploaded Coworld versions retain their original immutable viewer bundles.
