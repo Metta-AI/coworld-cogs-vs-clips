@@ -7,7 +7,7 @@
   ],
   "game": {
     "name": "cogs_vs_clips",
-    "description": "Cogs vs Clips and FourScore in one Coworld, with MettaGrid and Polyworld implementations.",
+    "description": "Eight Cogs share a home, a resource bank, and a fight against the spreading Clips. Program a Cog to mine supplies, equip a specialist role, and capture junctions that extend your team’s territory. Keep the network connected: holding more junctions for longer earns a higher team score. In FourScore, four teams of eight compete for the same map. Each Cog is controlled by an AI policy; you build the policy and watch the team put it to work.",
     "owner": "coworld@softmax.com",
     "replay_viewer": {
       "bundle": "static-replay-viewer"
@@ -473,7 +473,7 @@
         "seed": 0,
         "step_seconds": 0.02
       },
-      "description": "8-agent Cogs vs Clips daily tournament variant backed by the Cogsguard Machina 1 mission.",
+      "description": "Eight Cogs cooperate against expanding Clips on the original MettaGrid Machina mission. Gather resources, capture junctions, and hold territory over 10,000 steps.",
       "game_runnable": {
         "type": "game",
         "image": "{{GAME_IMAGE}}",
@@ -591,7 +591,7 @@
         "seed": 0,
         "step_seconds": 0.02
       },
-      "description": "32-agent Four Score daily tournament variant with four submitted policies expanded into four 8-agent teams.",
+      "description": "Four teams of eight Cogs compete for territory in the original MettaGrid FourScore mission. Each submitted policy controls one team for 10,000 steps.",
       "game_runnable": {
         "type": "game",
         "image": "{{GAME_IMAGE}}",
@@ -605,7 +605,7 @@
     {
       "id": "polyworld-machina-daily",
       "name": "Polyworld Cooperative CvC",
-      "description": "Daily map_seed is frozen by the league planner. This manifest default is a reproducible preview fixture.",
+      "description": "Eight independently submitted Cogs cooperate against expanding Clips for 10,000 ticks. Score is the team’s average number of held junctions. The league selects the daily map; previews use the fixed map seed below.",
       "game_config": {
         "players": [
           {
@@ -748,7 +748,7 @@
         "seed": 1,
         "max_ticks": 10000
       },
-      "description": "Full-length deterministic competition match.",
+      "description": "Four teams of eight Cogs compete for territory on a fixed map. Mine resources, capture junctions, and disrupt rival networks. The team with the highest average number of held junctions over 10,000 ticks wins.",
       "game_runnable": {
         "type": "game",
         "image": "{{POLYWORLD_FOURSCORE_IMAGE}}",

@@ -2,7 +2,27 @@
 
 Cogs vs Clips Coworld source package.
 
-Cogs vs Clips is a team-based territory control game. Cog agents capture and hold junctions while Clips — automated opponents — continuously expand by seizing adjacent territory.
+Cogs vs Clips is a cooperative territory game: eight Cogs share a home and a
+resource bank while automated Clips spread across the map. Each Cog runs an AI
+policy. You build its decision-making; the team must turn local observations
+into coordinated gathering, expansion, and defense.
+
+Mine carbon, oxygen, germanium, and silicon to supply the shared bank. Equip
+miners to gather, scouts to explore, aligners to capture junctions, and scramblers
+to disrupt enemy territory. Hearts pay for captures and scrambling. Keep captured
+junctions connected to your hub: a broken connection can cost the team its territory.
+
+In the Polyworld modes, each 10,000-tick match scores the average number of
+junctions a team holds. All teammates share that score. Cooperative Cogs vs Clips
+uses eight independently submitted policies against automated Clips. **FourScore**
+puts four teams of eight Cogs on the map, with no automated Clips and separate standings.
+
+Start from the [participation guide](https://softmax.com/cogs-vs-clips/play.md),
+then inspect the [Polyworld rules](https://github.com/softmax-universe/polyworld-cogs-vs-clips/blob/main/docs/rules.md)
+and [cooperative mode](https://github.com/softmax-universe/polyworld-cogs-vs-clips/blob/main/docs/cooperative-migration.md).
+BASIC programs and qualified Docker policies can share Polyworld matches.
+Watch replays to see whether your Cog kept the team supplied, reached useful
+junctions, or left a connection undefended.
 
 This repo owns the shared Cogs vs Clips Coworld game runtime, reference player, manifest, variants, and Docker build inputs for both the Cogs vs Clips and Four Score leagues.
 The Python package remains `cogsguard`.
@@ -158,3 +178,12 @@ Download the artifact into `dist/`, verify `dist/images.tar.gz.sha256`, and run
 This keeps upload credentials on the uploader's machine. Select the explicit
 version using `coworld next-version cogs_vs_clips` before dispatch; check again before
 upload if another release could have landed.
+
+## Store and Play page content
+
+`store-page.json` contains the published store content for `cogs_vs_clips`.
+The generic Softmax Play page also reads its blurb. Publish edits through the
+store-page draft/publish API or editor; uploading a Coworld does not publish this file.
+`game.description` and variant descriptions in `coworld_manifest_template.json`
+supply the game and mode summaries. Keep engine and packaging details in these
+developer docs rather than the player-facing pitch.
