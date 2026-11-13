@@ -1,0 +1,79 @@
+{
+  "cooperative": {
+    "description": "Eight independently programmed Cogs cooperate against spreading Clips. Gather resources, equip specialist roles, and hold connected junctions for 10,000 ticks. The map changes daily in UTC. Standings show the latest round’s mean team territory score across eight balanced appearances per policy; they measure team outcomes, not individual wins. BASIC and qualified Docker policies can share a match.",
+    "variant_id": "polyworld-machina-daily",
+    "ranking": {
+      "algorithm": "score",
+      "direction": "maximize",
+      "initial_standing": 0.0,
+      "round_scoring_rule": "mean",
+      "standing_aggregation": "latest"
+    },
+    "scheduler": {
+      "strategy": "balanced_rotation",
+      "matchmaking": "random",
+      "min_episodes_per_entrant": 8,
+      "insufficient_players": "filler_policy",
+      "daily_map_seed": true
+    }
+  },
+  "singles": {
+    "description": "One policy controls all eight Cogs against automated Clips. Coordinate a complete team to gather resources, capture junctions, and keep territory connected for 10,000 ticks. Every round uses one frozen daily UTC map. Standings show each policy’s latest-round team territory score. BASIC and qualified Docker policies are supported.",
+    "variant_id": "polyworld-machina-daily",
+    "ranking": {
+      "algorithm": "score",
+      "direction": "maximize",
+      "initial_standing": 0.0,
+      "round_scoring_rule": "mean",
+      "standing_aggregation": "latest"
+    },
+    "scheduler": {
+      "strategy": "clone_fill",
+      "seat_count": 8,
+      "episodes_per_entrant": 1,
+      "clone_score_aggregation": "mean",
+      "insufficient_players": "multiple_seats",
+      "daily_map_seed": true
+    }
+  },
+  "doubles": {
+    "description": "Two policies cooperate against automated Clips, each controlling four of the eight Cogs. Divide gathering, capture, and defense across a 10,000-tick match on the daily UTC map. Both partners receive the team’s territory score. Standings show the latest round’s mean score across two sampled partnerships. BASIC and qualified Docker policies can play together.",
+    "variant_id": "polyworld-machina-daily",
+    "ranking": {
+      "algorithm": "score",
+      "direction": "maximize",
+      "initial_standing": 0.0,
+      "round_scoring_rule": "mean",
+      "standing_aggregation": "latest"
+    },
+    "scheduler": {
+      "strategy": "team_n",
+      "team_count": 2,
+      "team_layout": "blocks",
+      "matchmaking": "random",
+      "min_episodes_per_entrant": 2,
+      "insufficient_players": "do_not_run",
+      "daily_map_seed": true
+    }
+  },
+  "fourscore": {
+    "description": "Four teams of eight independently programmed Cogs compete for connected territory on a fixed map. Gather supplies, capture junctions, and disrupt rival networks over 10,000 ticks. Teammates share the average number of junctions held. Each round balances team ratings and randomizes corners and seats across four matches. OpenSkill tracks team results; baseline Cogs fill vacant seats. BASIC and qualified Docker policies can share a team.",
+    "variant_id": "polyworld-four-score",
+    "ranking": {
+      "algorithm": "openskill",
+      "mu": 25.0,
+      "sigma": 8.333333333333334,
+      "round_scoring_rule": "mean"
+    },
+    "scheduler": {
+      "strategy": "team_n",
+      "team_count": 4,
+      "team_layout": "blocks",
+      "distinct_teammates": true,
+      "matchmaking": "elo_softmax",
+      "matchmaking_temperature": 100.0,
+      "num_episodes": 4,
+      "insufficient_players": "filler_policy"
+    }
+  }
+}
