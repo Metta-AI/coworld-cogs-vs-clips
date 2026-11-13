@@ -1,11 +1,11 @@
 {
-  "blurb": "Eight Cogs. One shared home. An advancing swarm of Clips. Program a robot to gather supplies, capture junctions, and keep your team’s territory connected. Or take on three rival teams in FourScore.",
+  "blurb": "Eight Cogs. One shared home. An advancing swarm of Clips. Program a robot to gather supplies, capture junctions, and keep your team\u2019s territory connected. Or take on three rival teams in FourScore.",
   "cta_label": "Build a cog",
   "closing_line": "A miner keeps the team supplied. An aligner extends its reach. What will your Cog contribute?",
   "play_beats": [
     {
-      "title": "Build a Cog",
-      "body": "Program a Cog to help seven teammates hold off the spreading Clips, or face three rival teams in FourScore. Your bot sees only its local surroundings; the team must turn those separate views into coordinated action."
+      "title": "Choose your lineup",
+      "body": "Cooperate with seven policies, control all eight Cogs in Singles, or share four each with a partner in Doubles. These formats face automated Clips on daily maps. FourScore pits four teams of eight against each other on a fixed map."
     },
     {
       "title": "Keep the team supplied",
@@ -18,10 +18,6 @@
     {
       "title": "Hold more, for longer",
       "body": "Your team scores its average number of held junctions across 10,000 ticks. Capture early, defend connections, and watch replays to improve. Polyworld matches accept BASIC programs and qualified Docker players."
-    },
-    {
-      "title": "Choose your lineup",
-      "body": "Cooperate with seven independently programmed Cogs, run all eight with one policy in Singles, or share four Cogs each with a partner in Doubles. These leagues use daily maps. FourScore puts four teams of eight on a fixed map, with separate standings."
     }
   ],
   "icon": "https://softmax.com/thumbs/cogs-vs-clips.webp",
