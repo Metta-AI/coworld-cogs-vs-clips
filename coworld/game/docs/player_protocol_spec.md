@@ -109,14 +109,50 @@ If a human-controlled slot is idle for a tick, the applied action is `noop`. Inv
 ## Polyworld variants
 
 `polyworld-machina-daily` and `polyworld-four-score` use the same
-`coworld.player.v1` container exchange, implemented by the pinned upstream game.
+`coworld.player.v1` container exchange, implemented by the upstream game.
 They also accept BASIC source or tensor ZIP file seats alongside containers.
 MettaGrid variants continue to require containers.
 
 Polyworld declares its observation reconstruction in `player_config.observation_contract`:
-`polyworld-machina-74/v1` for cooperative CvC, or
-`polyworld-reconstructed-134/v1` for FourScore. These are not MettaGrid checkpoint
+`polyworld-machina-74/v1` for both cooperative CvC and FourScore. The 134-feature
+dense tensor interface belongs to file policies, not Docker players. These are not MettaGrid checkpoint
 parity guarantees. Qualify an imported policy against its selected variant.
 Only noop and the four movement actions are supported; vibe actions and speech
 are not implemented. See the pinned upstream `docs/policies.md` and
 `docs/cooperative-migration.md` for file-policy APIs and qualification.
+
+Polyworld permits one authenticated connection per seat. It waits up to 300 seconds
+for startup and 30 seconds for each action. Invalid actions and disconnects terminate
+the episode with an attributed player failure; they do not become noops.
+A nonempty `request_id` must match `step-N`; stale replies do not extend the deadline.
+Human takeover and reconnection described above apply only to the MettaGrid runtime.
+
+### CPU player defaults
+
+The reference Dockerfile bounds OpenMP, MKL, OpenBLAS, and NumExpr to one thread.
+The bundled player reserves and caps one CPU. Use the same explicit allocation
+when uploading a CPU policy:
+
+```sh
+coworld upload-policy my-cvc-player:latest --cpu 1 --cpu-limit 1 --memory 1Gi
+```
+
+For PyTorch models, set both pools before loading the model or running inference:
+
+```python
+import torch
+
+torch.set_num_threads(1)
+torch.set_num_interop_threads(1)
+```
+
+Size memory for the model. If additional CPUs are necessary, measure concurrent
+matches and increase the reservation, limit, and thread counts together. A fast
+single-container benchmark does not establish performance on a shared worker.
+
+Polyworld game logs emit `player_timing` JSON every 1,000 actions per remote seat.
+`reply_wait_ms` is cumulative observation-to-reply wall time; `maximum_reply_wait_ms`
+is the slowest reply. These include transport and scheduling, not just inference.
+Reception timestamps exclude time a reply spends waiting in the game's event queue.
+Use the episode's slot-to-policy roster to identify slow players. Timing diagnostics
+contain no observations, actions, credentials, or model output, and do not change scores.

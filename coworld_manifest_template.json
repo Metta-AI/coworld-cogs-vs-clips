@@ -400,6 +400,10 @@
       "name": "Reference Player",
       "type": "player",
       "image": "{{PLAYER_IMAGE}}",
+      "resources": {
+        "requests": {"cpu": "1", "memory": "1Gi"},
+        "limits": {"cpu": "1"}
+      },
       "run": [
         "python",
         "/app/coworld_reference_player.py"
