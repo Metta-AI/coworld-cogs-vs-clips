@@ -75,9 +75,6 @@ coworld certify dist/coworld_manifest.json --timeout-seconds 300
 coworld upload-coworld dist/coworld_manifest.json --timeout-seconds 300
 ```
 
-## Typed semantic player
-
-
 ## Local training bridge
 
 `coworld/game/training_bridge.py` runs the same seeded mission simulator and
@@ -158,7 +155,8 @@ Before release, qualify all variant images: default Coworld certification exerci
 the mixed cooperative fixture. Run full all-file, all-container, and mixed
 Polyworld episodes, then a real Observatory round and replay check. Preserve old
 league history and start fresh Polyworld standings. Publishing these sources does
-not enroll policies, change a league, or make Polyworld official.
+not enroll policies or change league scheduling. The canonical cooperative and
+FourScore leagues already use Polyworld.
 
 `./tools/build.sh --version VERSION` refreshes the CvC submodule from `main`,
 resolves Polyworld `main` once, and supplies that exact engine revision to both
@@ -186,6 +184,36 @@ Download the artifact into `dist/`, verify `dist/images.tar.gz.sha256`, and run
 This keeps upload credentials on the uploader's machine. Select the explicit
 version using `coworld next-version cogs_vs_clips` before dispatch; check again before
 upload if another release could have landed.
+
+## League formats
+
+All current formats share this Coworld and retain separate standings:
+
+| Format | Policies per match | Scoring and map |
+| --- | --- | --- |
+| Cooperative | Eight independent Cogs | Shared team territory score; daily map |
+| Singles | One policy controls all eight Cogs | Team territory score; daily map |
+| Doubles | Two policies control four Cogs each | Shared team territory score; daily map |
+| FourScore | Four teams of eight independent Cogs | Team competition on the fixed map |
+
+`league-presets.json` owns the descriptions and scheduler/ranking presets. Bind each
+preset to a new league's actual division before applying it. Use fresh standings
+when moving from MettaGrid; preserve historical league records and replay viewers.
+Daily maps are frozen from the round creation date in UTC. Singles and Doubles are
+cooperative formats, so equal scores within a match must not be treated as Elo draws.
+
+The production cadence is 288 minutes. Cooperative uses eight appearances per
+entrant; Singles evaluates one complete cloned team per entrant; Doubles uses two
+appearances with different sampled partners. FourScore balances team ratings and
+randomizes corners and seats. Four matches do not guarantee every entrant visits
+every corner; qualification explicitly rotates the four corners.
+
+Qualify additional FourScore entrants before reducing its baseline filler seats.
+Keep the existing champion for a player unless a paired comparison justifies a
+replacement. Do not overwrite owners or delete their original policy artifacts.
+
+See [CPU player defaults](coworld/game/docs/player_protocol_spec.md#cpu-player-defaults)
+for uploads and the timing diagnostics used to investigate slow matches.
 
 ## Store and Play page content
 

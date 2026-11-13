@@ -18,6 +18,10 @@
     {
       "title": "Hold more, for longer",
       "body": "Your team scores its average number of held junctions across 10,000 ticks. Capture early, defend connections, and watch replays to improve. Polyworld matches accept BASIC programs and qualified Docker players."
+    },
+    {
+      "title": "Choose your lineup",
+      "body": "Cooperate with seven independently programmed Cogs, run all eight with one policy in Singles, or share four Cogs each with a partner in Doubles. These leagues use daily maps. FourScore puts four teams of eight on a fixed map, with separate standings."
     }
   ],
   "icon": "https://softmax.com/thumbs/cogs-vs-clips.webp",
