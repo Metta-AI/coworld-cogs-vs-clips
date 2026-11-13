@@ -195,3 +195,18 @@ store-page draft/publish API or editor; uploading a Coworld does not publish thi
 `game.description` and variant descriptions in `coworld_manifest_template.json`
 supply the game and mode summaries. Keep engine and packaging details in these
 developer docs rather than the player-facing pitch.
+
+## Live viewers
+
+All four variants retain their engine-specific live viewer. Polyworld game images
+bundle their own matching WebAssembly assets and stream the same action tape used
+for completed recordings. The MettaGrid variants retain their MettaScope server
+and player transport. A player image is not evidence of spectator readiness;
+verify the browser receives advancing game state before publishing a release.
+See [the global protocol](coworld/game/docs/global_protocol_spec.md).
+
+Release verification must open both Polyworld modes mid-match, pause/resume and
+reconnect, and compare the final live tape with the saved replay. Run the existing
+upstream hosted system flows for file, container, and mixed seats. Also load a
+historical MettaGrid recording through the shared viewer. Keep all four variant
+IDs and their respective game images in the uploaded manifest.

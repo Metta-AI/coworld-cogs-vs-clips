@@ -18,6 +18,7 @@ from pathlib import Path
 from coworld.certifier import build_manifest_episode_job_spec, load_coworld_package
 from coworld.manifest_validation import game_config_with_tokens
 from jsonschema import validate
+from websockets.sync.client import connect
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -81,6 +82,8 @@ def main() -> None:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
         env = dict(os.environ, COGAME_PORT=str(port), COGAME_HOST="127.0.0.1")
+        env["CVC_VIEWER_DIR"] = str(binaries / (
+            "browser-cooperative" if count == 8 else "browser"))
         for key, filename in [
             ("CONFIG", "config.json"),
             ("PLAYER_SEATS", "seats.json"),
@@ -101,6 +104,8 @@ def main() -> None:
                     assert not (directory / "failure.json").exists()
                     assert time.monotonic() < deadline, "Hosted episode timed out"
                     time.sleep(0.02)
+                with connect(f"ws://127.0.0.1:{port}/global", max_size=2**22) as viewer:
+                    assert viewer.recv() == (directory / "episode.replay").read_bytes()
                 result = json.loads(result_path.read_text())
                 validate(result, package.manifest.game.results_schema)
                 assert result["ticks"] == 10000 and len(result["scores"]) == count
