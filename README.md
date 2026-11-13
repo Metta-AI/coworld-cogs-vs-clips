@@ -210,3 +210,8 @@ reconnect, and compare the final live tape with the saved replay. Run the existi
 upstream hosted system flows for file, container, and mixed seats. Also load a
 historical MettaGrid recording through the shared viewer. Keep all four variant
 IDs and their respective game images in the uploaded manifest.
+
+The combined viewer also retains the checksum-pinned Polyworld Cooperative v4
+reader for published recordings. Current cooperative rules use v5; historical
+action tapes continue using their original simulation. Upstream owns this catalog
+in `coworld/retained-viewers.json`.
